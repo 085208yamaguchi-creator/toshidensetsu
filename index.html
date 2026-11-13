@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>あなたは何派？都市伝説相性診断</title>
+<meta name="description" content="9つの質問で、あなたの「信じ方のクセ」を6タイプに分類。話が合う相手、すれ違う相手もわかります。所要時間は約1分。">
+<meta property="og:title" content="あなたは何派？都市伝説相性診断">
+<meta property="og:description" content="9つの質問で、あなたの「信じ方のクセ」を6タイプに分類。所要時間は約1分。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root {
+  --night: #13152c;
+  --panel: #1c1f3e;
+  --panel-2: #24284d;
+  --line: #343964;
+  --ink: #e9e7f3;
+  --mute: #a2a4c6;
+  --lantern: #f0b468;
+  --lantern-ink: #1a1508;
+  --moon: #b9c6ff;
+  --font-display: "Zen Antique", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+body {
+  background: var(--night);
+  background-image: radial-gradient(ellipse at 50% -10%, #262a58 0%, transparent 60%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
+  min-height: 100vh;
+}
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px;
+}
+.file-no { font-size: 12px; letter-spacing: .18em; color: var(--mute); }
+h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(34px, 9vw, 48px);
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 span { color: var(--lantern); }
+.lead { margin: 0; color: var(--mute); }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.type-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; color: var(--mute); text-align: center; }
+.seal {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 22px;
+  border: 1.5px solid var(--lantern); color: var(--lantern);
+}
+button { font: inherit; cursor: pointer; }
+.btn {
+  background: var(--lantern); color: var(--lantern-ink);
+  border: 0; border-radius: 999px; padding: 14px 22px;
+  font-weight: 700; font-size: 16px;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn-ghost { background: transparent; color: var(--mute); border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; font-size: 14px; }
+.btn-ghost:hover { color: var(--ink); border-color: var(--mute); }
+:focus-visible { outline: 2px solid var(--moon); outline-offset: 3px; }
+.progress-row { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.bar { flex: 1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--lantern); transition: width .3s ease; }
+.q-text { font-family: var(--font-display); font-size: 22px; line-height: 1.5; margin: 0; text-wrap: balance; }
+.opts { display: flex; flex-direction: column; gap: 10px; }
+.opt {
+  text-align: left; background: var(--panel-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+  display: flex; gap: 12px; align-items: baseline; line-height: 1.5;
+}
+.opt:hover { border-color: var(--lantern); }
+.opt b { color: var(--lantern); font-family: var(--font-display); font-weight: 400; flex: none; }
+.res-head { display: flex; gap: 16px; align-items: center; }
+.res-head .seal { width: 72px; height: 72px; font-size: 34px; flex: none; }
+.res-label { font-size: 12px; letter-spacing: .18em; color: var(--mute); }
+.res-name { font-family: var(--font-display); font-size: 32px; line-height: 1.2; margin: 0; }
+.res-copy { margin: 0; }
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.match div { background: var(--panel-2); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.match small { color: var(--mute); font-size: 12px; letter-spacing: .1em; }
+.match strong { font-size: 17px; }
+.match p { margin: 0; font-size: 13px; color: var(--mute); line-height: 1.6; }
+.match .good small { color: var(--lantern); }
+.dist { display: flex; flex-direction: column; gap: 8px; }
+.dist-row { display: grid; grid-template-columns: 6.5em 1fr 3em; gap: 10px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.dist-row .bar { height: 8px; }
+.dist-row .bar i { background: var(--moon); transition: none; }
+.dist-row.top .bar i { background: var(--lantern); }
+.dist-row span:last-child { text-align: right; color: var(--mute); }
+h2 { font-size: 14px; letter-spacing: .14em; color: var(--mute); font-weight: 500; margin: 0; }
+.share-box { background: var(--night); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; white-space: pre-wrap; user-select: all; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.toast { font-size: 13px; color: var(--lantern); }
+.foot { font-size: 12px; color: var(--mute); text-align: center; margin: 0; }
+@media (max-width: 380px) { .match { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="file-no">FILE No.0428 ── 夜の調査ファイル</div>
+  <h1>あなたは<span>何派</span>？<br>都市伝説相性診断</h1>
+
+  <section class="card" id="start">
+    <p class="lead">9つの質問で、あなたの「信じ方のクセ」を6タイプに分類。話が合う相手、すれ違う相手もわかります。所要時間は約1分。</p>
+    <div class="types" id="typeList"></div>
+    <button class="btn" id="startBtn">診断をはじめる</button>
+  </section>
+
+  <section class="card" id="quiz" hidden>
+    <div class="progress-row"><span id="qNum">Q1 / 9</span><div class="bar"><i id="qBar"></i></div></div>
+    <p class="q-text" id="qText"></p>
+    <div class="opts" id="opts"></div>
+    <div class="row"><button class="btn-ghost" id="backBtn">ひとつ戻る</button></div>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <div class="res-head">
+      <div class="seal" id="rSeal"></div>
+      <div>
+        <div class="res-label">あなたのタイプ</div>
+        <p class="res-name" id="rName"></p>
+      </div>
+    </div>
+    <p class="res-copy" id="rCopy"></p>
+    <div class="match">
+      <div class="good"><small>相性 ◎</small><strong id="rGood"></strong><p id="rGoodWhy"></p></div>
+      <div><small>相性 △</small><strong id="rBad"></strong><p id="rBadWhy"></p></div>
+    </div>
+    <h2>あなたの成分</h2>
+    <div class="dist" id="rDist"></div>
+    <h2>結果をシェア</h2>
+    <div class="share-box" id="shareText"></div>
+    <div class="row">
+      <button class="btn" id="copyBtn">シェア文をコピー</button>
+      <button class="btn-ghost" id="retryBtn">もう一度診断する</button>
+      <span class="toast" id="toast" hidden>コピーしました</span>
+    </div>
+  </section>
+
+  <p class="foot">※この診断はエンタメです。内容の真偽を保証するものではありません。</p>
+</main>
+
+<script>
+const TYPES = {
+  A: { seal: "古", name: "古代文明派", copy: "ピラミッドや海底遺跡に胸が高鳴るロマン型。「昔の人はもっと知っていた」と感じていて、地層の奥に答えが眠っていると信じています。" },
+  U: { seal: "宇", name: "宇宙人派", copy: "夜空を見上げずにはいられない観測型。UFO映像は一時停止して検証し、人類だけが知的生命体だとは思っていません。" },
+  S: { seal: "結", name: "秘密結社派", copy: "ニュースの裏側を読むタイプ。シンボルや数字の一致に気づく観察眼があり、「誰が得をするのか」を常に考えています。" },
+  P: { seal: "波", name: "波動派", copy: "目に見えない周波数やエネルギーを感じ取る感覚型。山や神社で心が整う瞬間を知っていて、真実は自分の内側にあると考えています。" },
+  G: { seal: "怪", name: "怪異派", copy: "口裂け女やきさらぎ駅にゾクッとする語り部型。怖いのに知りたい、その好奇心で夜ふかしするのが大好きです。" },
+  K: { seal: "検", name: "検証派", copy: "「ソースは？」が口ぐせの調査型。信じるより調べるのが楽しく、都市伝説を一番ディープに味わっているのは実はこのタイプです。" }
+};
+const MATCH = {
+  A: { good: "U", goodWhy: "「古代文明は宇宙人が作った説」で朝まで語れる", bad: "K", badWhy: "ロマンに年代測定で返されがち" },
+  U: { good: "A", goodWhy: "ナスカの地上絵の話だけで1軒目が終わる", bad: "G", badWhy: "光る物体を幽霊と言われて譲れない" },
+  S: { good: "K", goodWhy: "本気で議論できる最高の相棒になる", bad: "P", badWhy: "「外より内側を見て」と言われすれ違う" },
+  P: { good: "G", goodWhy: "見えない世界の話が自然に通じ合う", bad: "S", badWhy: "世界の見方が外と内で真逆" },
+  G: { good: "P", goodWhy: "パワースポットと心霊スポットを一緒に巡れる", bad: "U", badWhy: "全部宇宙人のせいにされると怖さが消える" },
+  K: { good: "S", goodWhy: "白熱した議論がいちばん楽しい相手", bad: "A", badWhy: "ロマンに水を差す役になりがち" }
+};
+const QS = [
+  { q: "夜中についYouTubeで見てしまうのは？", o: [["A","ピラミッドの謎の建造方法"],["U","最新のUFO目撃映像"],["S","秘密結社のシンボル解説"],["G","心霊スポット突撃動画"]] },
+  { q: "旅行先で一番行きたい場所は？", o: [["A","与那国島の海底遺跡"],["P","神社やパワースポット巡り"],["G","地図から消えた廃村"],["K","博物館で一次資料を見る"]] },
+  { q: "「月の裏側には何かある」と言われたら？", o: [["U","基地があっても驚かない"],["S","隠しているのは各国政府だ"],["K","まず観測データを見せてほしい"],["A","古代文明の遺物かもしれない"]] },
+  { q: "気になってしまう数字や記号は？", o: [["S","ピラミッドの上の「目」のマーク"],["P","528Hz という周波数"],["G","4 と 13"],["K","特にない。数字は数字"]] },
+  { q: "友だちが「昨日、空に光る物体を見た」と言ったら？", o: [["U","時刻と方角をすぐに聞く"],["K","それ、たぶん人工衛星の列だね"],["P","何かのサインかもと感じる"],["G","それ、人魂じゃない？"]] },
+  { q: "好きな伝説・言い伝えは？", o: [["A","ムー大陸・アトランティス"],["G","口裂け女・きさらぎ駅"],["S","秘密結社と日本の歴史"],["U","かぐや姫は宇宙人だった説"]] },
+  { q: "お金の流れについてどう思う？", o: [["S","一部の人がルールを作っている"],["P","波動が整えばお金は巡ってくる"],["K","仕組みを数字で理解したい"],["A","古代の貨幣や交易のほうが気になる"]] },
+  { q: "理想の休日の過ごし方は？", o: [["P","山や森で深呼吸する"],["G","怖い話を聞きながら夜ふかし"],["U","星空を一晩中ながめる"],["K","気になる説を調べて検証する"]] },
+  { q: "結局、世界の真実はどこにある？", o: [["A","地層と遺跡の中"],["U","宇宙のむこう側"],["S","報道されない場所"],["P","自分の内側"]] }
+];
+const ORDER = ["A","U","S","P","G","K"];
+const $ = id => document.getElementById(id);
+let answers = [];
+
+$("typeList").innerHTML = ORDER.map(k => `<div class="type-chip"><div class="seal">${TYPES[k].seal}</div>${TYPES[k].name}</div>`).join("");
+
+function show(id) { ["start","quiz","result"].forEach(s => $(s).hidden = s !== id); window.scrollTo({ top: 0 }); }
+
+function renderQ() {
+  const i = answers.length, q = QS[i];
+  $("qNum").textContent = `Q${i + 1} / ${QS.length}`;
+  $("qBar").style.width = `${(i / QS.length) * 100}%`;
+  $("qText").textContent = q.q;
+  $("opts").innerHTML = q.o.map(([k, t], j) => `<button class="opt" data-k="${k}"><b>${"壱弐参肆"[j]}</b><span>${t}</span></button>`).join("");
+  $("backBtn").hidden = i === 0;
+}
+
+$("opts").addEventListener("click", e => {
+  const b = e.target.closest(".opt"); if (!b) return;
+  answers.push(b.dataset.k);
+  answers.length === QS.length ? renderResult() : renderQ();
+});
+$("backBtn").addEventListener("click", () => { answers.pop(); renderQ(); });
+$("startBtn").addEventListener("click", () => { answers = []; renderQ(); show("quiz"); });
+$("retryBtn").addEventListener("click", () => { answers = []; renderQ(); show("quiz"); });
+
+function scoreOf(list) {
+  const s = Object.fromEntries(ORDER.map(k => [k, 0]));
+  list.forEach(k => s[k]++);
+  return s;
+}
+function pickTop(s) {
+  const max = Math.max(...Object.values(s));
+  const tied = ORDER.filter(k => s[k] === max);
+  if (tied.length === 1) return tied[0];
+  for (let i = answers.length - 1; i >= 0; i--) if (tied.includes(answers[i])) return answers[i];
+  return tied[0];
+}
+
+function renderResult() {
+  const s = scoreOf(answers), top = pickTop(s), t = TYPES[top], m = MATCH[top];
+  $("rSeal").textContent = t.seal;
+  $("rName").textContent = t.name;
+  $("rCopy").textContent = t.copy;
+  $("rGood").textContent = TYPES[m.good].name; $("rGoodWhy").textContent = m.goodWhy;
+  $("rBad").textContent = TYPES[m.bad].name; $("rBadWhy").textContent = m.badWhy;
+  $("rDist").innerHTML = ORDER.slice().sort((a, b) => s[b] - s[a]).map(k => {
+    const pct = Math.round(s[k] / answers.length * 100);
+    return `<div class="dist-row${k === top ? " top" : ""}"><span>${TYPES[k].name}</span><div class="bar"><i style="width:${pct}%"></i></div><span>${pct}%</span></div>`;
+  }).join("");
+  $("shareText").textContent = `都市伝説相性診断の結果は【${t.name}】でした。\n相性◎は${TYPES[m.good].name}。\nあなたは何派？\n${location.href.split("#")[0]}\n#都市伝説相性診断`;
+  $("toast").hidden = true;
+  show("result");
+}
+
+$("copyBtn").addEventListener("click", () => {
+  const txt = $("shareText").textContent;
+  const done = () => { $("toast").hidden = false; };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($("shareText")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); $("toast").textContent = "選択しました。長押しでコピーしてください"; done(); };
+  try { navigator.clipboard.writeText(txt).then(() => { $("toast").textContent = "コピーしました"; done(); }, fallback); } catch (e) { fallback(); }
+});
+</script>
+</body>
+</html>
