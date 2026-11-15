@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    function validProfile(d) {
+      return d.keys().hasOnly(['nickname', 'type', 'genres', 'bio', 'updatedAt'])
+        && d.nickname is string && d.nickname.size() >= 1 && d.nickname.size() <= 20
+        && d.type in ['A', 'U', 'S', 'P', 'G', 'K']
+        && d.genres is list && d.genres.size() >= 1 && d.genres.size() <= 14
+        && d.bio is string && d.bio.size() <= 140
+        && d.updatedAt is int;
+    }
+
+    function isMutual(a, b) {
+      return exists(/databases/$(db)/documents/likes/$(a + '_' + b))
+          && exists(/databases/$(db)/documents/likes/$(b + '_' + a));
+    }
+
+    // プロフィール: ログイン中なら誰でも読める。書けるのは本人だけ。
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid && validProfile(request.resource.data);
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // イイね: ドキュメントID は「送った人_受けた人」。読めるのは当事者だけ。
+    match /likes/{id} {
+      allow read: if signedIn() && (resource == null
+        || request.auth.uid == resource.data.from
+        || request.auth.uid == resource.data.to);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'createdAt'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.to;
+      allow delete: if signedIn() && request.auth.uid == resource.data.from;
+    }
+
+    // 連絡先(Threads ID): 本人と、マッチした相手だけが読める。
+    match /contacts/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMutual(uid, request.auth.uid));
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['threads'])
+        && request.resource.data.threads is string
+        && request.resource.data.threads.size() <= 30;
+    }
+  }
+}
