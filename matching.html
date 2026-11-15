@@ -9,6 +9,14 @@
 <meta property="og:description" content="好きな都市伝説ジャンルが近い人にイイね。お互いイイねでマッチ成立。">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#13152c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="都市伝説">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
@@ -237,6 +245,10 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
           <button class="btn-ghost" id="copyBtn">友だちに紹介する</button>
           <span class="toast" id="toast" hidden></span>
         </div>
+        <div class="row" id="installRow" hidden>
+          <button class="btn-ghost" id="installBtn">ホーム画面に追加</button>
+        </div>
+        <p class="stat" id="iosHint" hidden>iPhoneは、Safariの共有ボタン →「ホーム画面に追加」でアプリのように使えます。</p>
       </section>
     </div>
   </div>
@@ -617,6 +629,17 @@ $("copyBtn").addEventListener("click", () => {
   catch (e) { done("コピーできませんでした"); }
 });
 
+/* ---------- ホーム画面に追加 ---------- */
+let installEvt = null;
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("installRow").hidden = false; });
+$("installBtn").addEventListener("click", async () => {
+  if (!installEvt) return;
+  installEvt.prompt(); await installEvt.userChoice.catch(() => {});
+  installEvt = null; $("installRow").hidden = true;
+});
+if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) $("iosHint").hidden = false;
+
 /* ---------- 起動 ---------- */
 (async function start() {
   $("modeLabel").textContent = B.label;
@@ -639,5 +662,6 @@ $("copyBtn").addEventListener("click", () => {
   }
 })();
 </script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </body>
 </html>
