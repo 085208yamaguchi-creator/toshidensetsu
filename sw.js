@@ -1,7 +1,7 @@
 // オフラインでも画面が開けるように、アプリ本体だけをキャッシュする。
 // Firebase など外部への通信はキャッシュしない。
-const CACHE = "toshidensetsu-v1";
-const SHELL = ["./", "./index.html", "./matching.html", "./firebase-config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "toshidensetsu-v2";
+const SHELL = ["./", "./index.html", "./matching.html", "./terms.html", "./firebase-config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

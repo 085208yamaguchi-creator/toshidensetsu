@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>都市伝説マッチング</title>
-<meta name="description" content="好きな都市伝説ジャンルが近い人にイイね。相手もイイねしたらマッチして、Threadsで話せます。">
+<meta name="description" content="好きな都市伝説ジャンルが近い人にイイね。相手もイイねしたらマッチして、SNSでつながれます。">
 <meta property="og:title" content="都市伝説マッチング">
 <meta property="og:description" content="好きな都市伝説ジャンルが近い人にイイね。お互いイイねでマッチ成立。">
 <meta property="og:type" content="website">
@@ -145,6 +145,22 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .toast { font-size: 13px; color: var(--lantern); }
 .foot { font-size: 12px; color: var(--mute); text-align: center; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .foot a { color: var(--mute); }
+/* login / misc */
+.divider { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--mute); }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+input[type="email"], input[type="password"] { font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; width: 100%; }
+.contact-grid { display: grid; grid-template-columns: 6.5em 1fr; gap: 8px 10px; align-items: center; font-size: 14px; color: var(--mute); }
+.contact-grid input { padding: 9px 12px; }
+.agree { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.6; }
+.agree input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--lantern); flex: none; }
+a { color: var(--moon); }
+.linkish { background: none; border: 0; padding: 0; color: var(--mute); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.linkish:hover { color: var(--ink); }
+.linkish.danger { color: var(--ember); }
+.safety { display: flex; justify-content: flex-end; gap: 16px; }
+select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+.contacts { display: flex; flex-direction: column; gap: 2px; }
+.danger-zone { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 @media (max-width: 380px) { .type-pick { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
@@ -156,9 +172,29 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
   <p class="lead" id="loading">読み込み中…</p>
   <p class="err" id="fatal" hidden></p>
 
+  <!-- ログイン -->
+  <section class="card" id="login" hidden>
+    <p class="lead">都市伝説の話ができる友だちを見つける、趣味友マッチングです。はじめての人も、ログインするとそのまま登録に進みます。</p>
+    <button class="btn" id="googleBtn">Googleでログイン</button>
+    <div class="divider">またはメールで</div>
+    <label class="field" for="lEmail">メールアドレス
+      <input type="email" id="lEmail" autocomplete="email">
+    </label>
+    <label class="field" for="lPass">パスワード（6文字以上）
+      <input type="password" id="lPass" autocomplete="current-password" minlength="6">
+    </label>
+    <div class="row">
+      <button class="btn" id="emailLogin">ログイン</button>
+      <button class="btn-ghost" id="emailSignup">新しく登録</button>
+      <button class="linkish" id="resetPw">パスワードを忘れた</button>
+    </div>
+    <p class="err" id="loginErr" hidden></p>
+    <p class="stat" id="loginInfo" hidden></p>
+  </section>
+
   <!-- プロフィール登録 / 編集 -->
   <section class="card" id="setup" hidden>
-    <p class="lead" id="setupLead">好きなジャンルを選ぶと、話が合いそうな人が順番に出てきます。お互いにイイねするとマッチして、Threads ID が見られるようになります。</p>
+    <p class="lead" id="setupLead">好きなジャンルを選ぶと、話が合いそうな人が順番に出てきます。お互いにイイねするとマッチして、相手のSNSが見られるようになります。恋愛・出会い目的の利用はできません。</p>
     <label class="field" for="fNick">ニックネーム（20文字まで）
       <input type="text" id="fNick" maxlength="20" placeholder="例：深夜のUMA観測員" autocomplete="off">
     </label>
@@ -173,9 +209,19 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
     <label class="field" for="fBio">ひとこと（140文字まで）
       <textarea id="fBio" maxlength="140" placeholder="例：きさらぎ駅の考察をひと晩中語れる人を探してます"></textarea>
     </label>
-    <label class="field" for="fThreads">Threads ID（マッチした相手にだけ表示）
-      <input type="text" id="fThreads" maxlength="30" placeholder="@なしで入力" autocomplete="off" inputmode="latin">
-      <span class="field-note">本名・住所・電話番号などは書かないでください。</span>
+    <div class="field">
+      <span>連絡先（1つ以上・マッチした相手にだけ表示）</span>
+      <div class="contact-grid">
+        <label for="cThreads">Threads</label><input type="text" id="cThreads" maxlength="30" placeholder="@なしのユーザー名" autocomplete="off" inputmode="latin">
+        <label for="cX">X</label><input type="text" id="cX" maxlength="15" placeholder="@なしのユーザー名" autocomplete="off" inputmode="latin">
+        <label for="cInstagram">Instagram</label><input type="text" id="cInstagram" maxlength="30" placeholder="@なしのユーザー名" autocomplete="off" inputmode="latin">
+        <label for="cDiscord">Discord</label><input type="text" id="cDiscord" maxlength="32" placeholder="ユーザー名" autocomplete="off" inputmode="latin">
+      </div>
+      <span class="field-note">本名・住所・電話番号・LINE ID などは書かないでください。</span>
+    </div>
+    <label class="agree" for="fAgree" id="agreeRow">
+      <input type="checkbox" id="fAgree">
+      <span>18歳以上です。<a href="terms.html" target="_blank" rel="noopener">利用規約とプライバシーポリシー</a>に同意し、恋愛・出会い目的では使いません。</span>
     </label>
     <p class="err" id="formErr" hidden></p>
     <div class="row">
@@ -215,6 +261,10 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
             <button class="btn" id="likeBtn">イイね！</button>
           </div>
           <div class="count" id="pCount"></div>
+          <div class="safety">
+            <button class="linkish" id="blockBtn">ブロック</button>
+            <button class="linkish" id="reportBtn">通報</button>
+          </div>
         </article>
         <div class="card empty" id="noMore" hidden>
           <div class="seal">尽</div>
@@ -239,7 +289,7 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
         </div>
         <p class="bio" id="meBio"></p>
         <div class="chips" id="meGenres"></div>
-        <p class="stat">Threads ID：<b id="meThreads"></b></p>
+        <div class="field"><span class="stat">連絡先（マッチした相手にだけ表示）</span><div class="contacts" id="meContacts"></div></div>
         <div class="row">
           <button class="btn" id="editBtn">プロフィールを編集</button>
           <button class="btn-ghost" id="copyBtn">友だちに紹介する</button>
@@ -249,13 +299,24 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
           <button class="btn-ghost" id="installBtn">ホーム画面に追加</button>
         </div>
         <p class="stat" id="iosHint" hidden>iPhoneは、Safariの共有ボタン →「ホーム画面に追加」でアプリのように使えます。</p>
+        <div class="danger-zone">
+          <div class="row">
+            <button class="btn-ghost" id="logoutBtn">ログアウト</button>
+            <button class="linkish danger" id="deleteBtn">退会する</button>
+          </div>
+          <div id="deleteConfirm" hidden style="display:flex;flex-direction:column;gap:10px">
+            <p class="err" style="margin:0">プロフィール・連絡先・イイねをすべて削除します。元に戻せません。</p>
+            <div class="row"><button class="btn" id="deleteYes">削除して退会</button><button class="btn-ghost" id="deleteNo">やめる</button></div>
+          </div>
+          <p class="err" id="meErr" hidden></p>
+        </div>
       </section>
     </div>
   </div>
 
   <div class="foot">
-    <p style="margin:0">※エンタメ目的の趣味友マッチングです。会う約束や個人情報のやりとりは慎重に。</p>
-    <p style="margin:0"><a href="index.html">都市伝説相性診断はこちら</a></p>
+    <p style="margin:0">※都市伝説好きの友だちさがし専用です。恋愛・出会い目的の利用は禁止しています。</p>
+    <p style="margin:0"><a href="index.html">都市伝説相性診断</a> ・ <a href="terms.html">利用規約・プライバシーポリシー</a></p>
   </div>
 </main>
 
@@ -268,6 +329,27 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
     <div class="row" style="justify-content:center">
       <button class="btn" id="mToMatches">マッチ一覧を見る</button>
       <button class="btn-ghost" id="mClose">さがすを続ける</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="reportOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="card" style="text-align:left;align-items:stretch">
+    <p class="match-title" id="rTitle" style="font-size:24px">通報する</p>
+    <p class="stat" style="margin:0"><span id="rName"></span>さんを運営に通報します。通報した相手はブロックされ、表示されなくなります。</p>
+    <label class="field" for="rReason">理由
+      <select id="rReason">
+        <option>恋愛・出会い目的の誘い</option>
+        <option>迷惑行為・スパム・勧誘</option>
+        <option>不快・攻撃的な内容</option>
+        <option>なりすまし</option>
+        <option>未成年の可能性</option>
+        <option>その他</option>
+      </select>
+    </label>
+    <div class="row">
+      <button class="btn" id="rSend">通報する</button>
+      <button class="btn-ghost" id="rCancel">やめる</button>
     </div>
   </div>
 </div>
@@ -292,6 +374,13 @@ const GENRES = [
   "パラレルワールド", "タイムトラベラー", "パワースポット", "呪物・禁足地",
   "歴史ミステリー", "昭和の都市伝説"
 ];
+// 連絡先の種類。pattern はユーザー名として使える文字。
+const CONTACTS = {
+  threads:   { label: "Threads",   input: "cThreads",   pattern: /^[A-Za-z0-9._]{1,30}$/, url: id => "https://www.threads.net/@" + id },
+  x:         { label: "X",         input: "cX",         pattern: /^[A-Za-z0-9_]{1,15}$/,  url: id => "https://x.com/" + id },
+  instagram: { label: "Instagram", input: "cInstagram", pattern: /^[A-Za-z0-9._]{1,30}$/, url: id => "https://www.instagram.com/" + id + "/" },
+  discord:   { label: "Discord",   input: "cDiscord",   pattern: /^[a-z0-9._]{2,32}$/,    url: null }
+};
 
 /* ---------- 相性計算 ---------- */
 function compat(me, other) {
@@ -303,8 +392,7 @@ function compat(me, other) {
   else if (BAD[me.type] === other.type) { bonus = 0; typeWhy = "タイプは正反対"; }
   else { bonus = 8; typeWhy = ""; }
   const score = Math.max(30, Math.min(99, Math.round(30 + 50 * ratio + bonus)));
-  const parts = [];
-  parts.push(common.length ? `共通ジャンル ${common.length}つ` : "共通ジャンルなし");
+  const parts = [common.length ? `共通ジャンル ${common.length}つ` : "共通ジャンルなし"];
   if (typeWhy) parts.push(typeWhy);
   return { score, common, why: parts.join("・") };
 }
@@ -313,10 +401,12 @@ function compat(me, other) {
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
 function chip(text, cls = "") { const s = document.createElement("span"); s.className = "chip " + cls; s.textContent = text; return s; }
 function clean(s) { return String(s || "").replace(/[\u0000-\u001f\u007f]/g, "").trim(); }
+function showErr(id, msg) { $(id).textContent = msg; $(id).hidden = !msg; }
 
 /* ---------- デモ用バックエンド（端末内だけで動く） ---------- */
 const SAMPLES = [
@@ -332,9 +422,11 @@ const SAMPLES = [
 
 const DemoBackend = {
   label: "デモモード",
-  async init() { return "me"; },
-  async getMe() { return { profile: store.get("tm_profile", null), threads: store.get("tm_threads", "") }; },
-  async saveMe(profile, threads) { store.set("tm_profile", profile); store.set("tm_threads", threads); },
+  demo: true,
+  // デモはログイン不要。onUser は即座に「ログイン済み」を返す。
+  async init(onUser) { onUser({ uid: "me" }); },
+  async getMe() { return { profile: store.get("tm_profile", null), contacts: store.get("tm_contacts", {}) }; },
+  async saveMe(profile, contacts) { store.set("tm_profile", profile); store.set("tm_contacts", contacts); },
   async listProfiles() { return SAMPLES.map(({ likesYou, ...p }) => p); },
   async like(uid) {
     const likes = new Set(store.get("tm_likes", [])); likes.add(uid); store.set("tm_likes", [...likes]);
@@ -342,7 +434,12 @@ const DemoBackend = {
   },
   async myLikes() { return new Set(store.get("tm_likes", [])); },
   async likesToMe() { return new Set(SAMPLES.filter(s => s.likesYou).map(s => s.id)); },
-  async contactOf() { return ""; }
+  async contactOf() { return {}; },
+  async getBlocks() { return new Set(store.get("tm_blocks", [])); },
+  async saveBlocks(set) { store.set("tm_blocks", [...set]); },
+  async report() {},
+  async logout() {},
+  async deleteAccount() { ["tm_profile", "tm_contacts", "tm_likes", "tm_blocks", "tm_passed"].forEach(store.del); }
 };
 
 /* ---------- Firebase バックエンド ---------- */
@@ -351,32 +448,44 @@ function loadScript(src) {
 }
 const FirebaseBackend = {
   label: "",
-  uid: null, fs: null,
-  async init() {
+  demo: false,
+  uid: null, fs: null, auth: null,
+  async init(onUser) {
     const v = "10.12.2";
     await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-app-compat.js`);
     await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-auth-compat.js`);
     await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore-compat.js`);
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    const auth = firebase.auth();
-    const user = auth.currentUser || await new Promise((res, rej) => {
-      const off = auth.onAuthStateChanged(u => { if (u) { off(); res(u); } });
-      auth.signInAnonymously().catch(rej);
-    });
-    this.uid = user.uid;
+    this.auth = firebase.auth();
+    this.auth.languageCode = "ja";
     this.fs = firebase.firestore();
-    return this.uid;
+    this.auth.onAuthStateChanged(u => { this.uid = u ? u.uid : null; onUser(u); });
   },
+  async loginGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try { await this.auth.signInWithPopup(provider); }
+    catch (e) {
+      if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") await this.auth.signInWithRedirect(provider);
+      else throw e;
+    }
+  },
+  loginEmail(email, pw) { return this.auth.signInWithEmailAndPassword(email, pw); },
+  async signupEmail(email, pw) {
+    const cred = await this.auth.createUserWithEmailAndPassword(email, pw);
+    cred.user.sendEmailVerification().catch(() => {});
+  },
+  resetPassword(email) { return this.auth.sendPasswordResetEmail(email); },
+  logout() { return this.auth.signOut(); },
   async getMe() {
     const [p, c] = await Promise.all([
       this.fs.collection("profiles").doc(this.uid).get(),
       this.fs.collection("contacts").doc(this.uid).get()
     ]);
-    return { profile: p.exists ? p.data() : null, threads: c.exists ? c.data().threads : "" };
+    return { profile: p.exists ? p.data() : null, contacts: c.exists ? c.data() : {} };
   },
-  async saveMe(profile, threads) {
+  async saveMe(profile, contacts) {
     await this.fs.collection("profiles").doc(this.uid).set({ ...profile, updatedAt: Date.now() });
-    await this.fs.collection("contacts").doc(this.uid).set({ threads });
+    await this.fs.collection("contacts").doc(this.uid).set(contacts);
   },
   async listProfiles() {
     const snap = await this.fs.collection("profiles").orderBy("updatedAt", "desc").limit(300).get();
@@ -396,18 +505,70 @@ const FirebaseBackend = {
     return new Set(snap.docs.map(d => d.data().from));
   },
   async contactOf(uid) {
-    try { const d = await this.fs.collection("contacts").doc(uid).get(); return d.exists ? d.data().threads : ""; }
-    catch (e) { return ""; }
+    try { const d = await this.fs.collection("contacts").doc(uid).get(); return d.exists ? d.data() : {}; }
+    catch (e) { return {}; }
+  },
+  async getBlocks() {
+    const d = await this.fs.collection("blocks").doc(this.uid).get();
+    return new Set(d.exists ? d.data().ids : []);
+  },
+  saveBlocks(set) { return this.fs.collection("blocks").doc(this.uid).set({ ids: [...set].slice(-500) }); },
+  report(target, reason) {
+    return this.fs.collection("reports").add({ from: this.uid, target, reason, createdAt: Date.now() });
+  },
+  async deleteAccount() {
+    const uid = this.uid, fs = this.fs;
+    const [mine, toMe] = await Promise.all([
+      fs.collection("likes").where("from", "==", uid).get(),
+      fs.collection("likes").where("to", "==", uid).get()
+    ]);
+    await Promise.all([...mine.docs, ...toMe.docs].map(d => d.ref.delete()));
+    await Promise.all(["profiles", "contacts", "blocks"].map(c => fs.collection(c).doc(uid).delete()));
+    await this.auth.currentUser.delete();
   }
 };
 
 const B = window.FIREBASE_CONFIG ? FirebaseBackend : DemoBackend;
 
 /* ---------- 状態 ---------- */
-let me = null, myThreads = "", people = [], liked = new Set(), likedMe = new Set();
+let me = null, myContacts = {}, people = [], liked = new Set(), likedMe = new Set(), blocked = new Set();
 let passed = new Set(store.get("tm_passed", []));
-let filterGenre = "", queue = [], current = null;
+let filterGenre = "", queue = [], current = null, reportTarget = null;
 let draft = { type: "", genres: [] };
+
+function show(section) {
+  ["loading", "login", "setup", "app"].forEach(id => $(id).hidden = id !== section);
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- ログイン ---------- */
+const AUTH_MSG = {
+  "auth/invalid-email": "メールアドレスの形が正しくありません。",
+  "auth/invalid-credential": "メールアドレスかパスワードが違います。",
+  "auth/wrong-password": "メールアドレスかパスワードが違います。",
+  "auth/user-not-found": "このメールアドレスは登録されていません。「新しく登録」を押してください。",
+  "auth/email-already-in-use": "このメールアドレスは登録済みです。「ログイン」を押してください。",
+  "auth/weak-password": "パスワードは6文字以上にしてください。",
+  "auth/too-many-requests": "試行が多すぎます。少し時間をおいてください。",
+  "auth/popup-closed-by-user": "",
+  "auth/cancelled-popup-request": "",
+  "auth/network-request-failed": "通信できませんでした。電波の良いところでもう一度どうぞ。"
+};
+async function authAction(fn) {
+  showErr("loginErr", ""); $("loginInfo").hidden = true;
+  try { await fn(); }
+  catch (e) { console.error(e); showErr("loginErr", e.code in AUTH_MSG ? AUTH_MSG[e.code] : "ログインできませんでした。もう一度お試しください。"); }
+}
+const emailPw = () => [clean($("lEmail").value), $("lPass").value];
+$("googleBtn").addEventListener("click", () => authAction(() => B.loginGoogle()));
+$("emailLogin").addEventListener("click", () => authAction(() => B.loginEmail(...emailPw())));
+$("emailSignup").addEventListener("click", () => authAction(() => B.signupEmail(...emailPw())));
+$("resetPw").addEventListener("click", () => authAction(async () => {
+  const [email] = emailPw();
+  if (!email) { showErr("loginErr", "上の欄にメールアドレスを入れてから押してください。"); return; }
+  await B.resetPassword(email);
+  $("loginInfo").textContent = "パスワード再設定のメールを送りました。"; $("loginInfo").hidden = false;
+}));
 
 /* ---------- プロフィール入力 ---------- */
 function renderForm() {
@@ -442,40 +603,48 @@ function openSetup(editing) {
   if (!TYPES[draft.type]) draft.type = "";
   $("fNick").value = me?.nickname || "";
   $("fBio").value = me?.bio || "";
-  $("fThreads").value = myThreads || "";
-  $("formErr").hidden = true;
+  for (const [k, c] of Object.entries(CONTACTS)) $(c.input).value = myContacts[k] || "";
+  $("fAgree").checked = !!me?.agreedAt;
+  $("agreeRow").hidden = !!me?.agreedAt;
+  showErr("formErr", "");
   $("cancelEdit").hidden = !editing;
   $("setupLead").hidden = editing;
   $("saveBtn").textContent = editing ? "保存する" : "保存してさがす";
   renderForm();
-  $("app").hidden = true; $("setup").hidden = false;
-  window.scrollTo({ top: 0 });
+  show("setup");
 }
 
 $("saveBtn").addEventListener("click", async () => {
   const nickname = clean($("fNick").value).slice(0, 20);
   const bio = clean($("fBio").value.replace(/\n/g, " ")).slice(0, 140);
-  const threads = clean($("fThreads").value).replace(/^@/, "");
+  const contacts = {};
   const errs = [];
+  for (const [k, c] of Object.entries(CONTACTS)) {
+    let v = clean($(c.input).value).replace(/^@/, "");
+    if (k === "discord") v = v.toLowerCase();
+    if (!v) continue;
+    if (!c.pattern.test(v)) errs.push(`${c.label} のユーザー名に使えない文字があります。`);
+    else contacts[k] = v;
+  }
   if (!nickname) errs.push("ニックネームを入れてください。");
   if (!draft.type) errs.push("タイプを選んでください。");
   if (draft.genres.length < 3) errs.push("ジャンルを3つ以上選んでください。");
-  if (threads && !/^[A-Za-z0-9._]{1,30}$/.test(threads)) errs.push("Threads ID は半角英数字・ピリオド・アンダーバーで入力してください。");
-  if (errs.length) { $("formErr").textContent = errs.join(" "); $("formErr").hidden = false; return; }
+  if (!Object.keys(contacts).length && !errs.some(e => e.includes("ユーザー名"))) errs.push("連絡先を1つ以上入れてください。");
+  if (!$("fAgree").checked) errs.push("18歳以上であることと、利用規約への同意にチェックしてください。");
+  if (errs.length) { showErr("formErr", errs.join(" ")); return; }
   $("saveBtn").disabled = true;
   try {
-    const profile = { nickname, type: draft.type, genres: draft.genres, bio };
-    await B.saveMe(profile, threads);
-    me = profile; myThreads = threads;
-    $("setup").hidden = true; $("app").hidden = false;
+    const profile = { nickname, type: draft.type, genres: draft.genres, bio, agreedAt: me?.agreedAt || Date.now() };
+    await B.saveMe(profile, contacts);
+    me = profile; myContacts = contacts;
+    show("app");
     renderMe(); buildQueue(); showTab("discover");
   } catch (e) {
-    $("formErr").textContent = "保存できませんでした。通信状態を確認して、もう一度押してください。";
-    $("formErr").hidden = false;
     console.error(e);
+    showErr("formErr", "保存できませんでした。通信状態を確認して、もう一度押してください。");
   } finally { $("saveBtn").disabled = false; }
 });
-$("cancelEdit").addEventListener("click", () => { $("setup").hidden = true; $("app").hidden = false; });
+$("cancelEdit").addEventListener("click", () => show("app"));
 
 /* ---------- タブ ---------- */
 function showTab(name) {
@@ -487,8 +656,7 @@ document.querySelector(".tabs").addEventListener("click", e => { const t = e.tar
 
 /* ---------- さがす ---------- */
 function renderFilter() {
-  const all = ["", ...GENRES];
-  $("filter").replaceChildren(...all.map(g => {
+  $("filter").replaceChildren(...["", ...GENRES].map(g => {
     const b = document.createElement("button");
     b.className = "chip"; b.dataset.g = g; b.textContent = g || "すべて";
     b.setAttribute("aria-pressed", String(filterGenre === g));
@@ -500,8 +668,9 @@ $("filter").addEventListener("click", e => {
   filterGenre = b.dataset.g; renderFilter(); buildQueue();
 });
 
+function visible() { return people.filter(p => !blocked.has(p.id)); }
 function buildQueue() {
-  queue = people
+  queue = visible()
     .filter(p => !liked.has(p.id) && !passed.has(p.id))
     .filter(p => !filterGenre || p.genres.includes(filterGenre))
     .map(p => ({ p, c: compat(me, p) }))
@@ -512,9 +681,8 @@ function showNext() {
   current = queue.shift() || null;
   $("personCard").hidden = !current; $("noMore").hidden = !!current;
   if (!current) {
-    const anyPassed = people.some(p => passed.has(p.id));
-    $("resetPass").hidden = !anyPassed;
-    $("noMoreText").textContent = people.length === 0
+    $("resetPass").hidden = !visible().some(p => passed.has(p.id));
+    $("noMoreText").textContent = visible().length === 0
       ? "まだ登録しているのはあなただけです。友だちに紹介して仲間を増やしましょう。"
       : filterGenre ? `「${filterGenre}」好きの人はいまは見つかりません。` : "全員チェックしました。新しい人が登録したらまた出てきます。";
     return;
@@ -524,7 +692,8 @@ function showNext() {
   $("pName").textContent = p.nickname;
   $("pSample").hidden = !p.sample;
   $("pType").textContent = TYPES[p.type].name;
-  $("pScore").innerHTML = ""; $("pScore").append(String(c.score)); const sm = document.createElement("small"); sm.textContent = "%"; $("pScore").append(sm);
+  const sm = document.createElement("small"); sm.textContent = "%";
+  $("pScore").replaceChildren(String(c.score), sm);
   $("pWhy").textContent = c.why;
   $("pBio").textContent = p.bio || "";
   $("pBio").hidden = !p.bio;
@@ -554,58 +723,93 @@ $("likeBtn").addEventListener("click", async () => {
 });
 $("resetPass").addEventListener("click", () => { passed.clear(); store.set("tm_passed", []); buildQueue(); });
 
+/* ---------- ブロック・通報 ---------- */
+async function blockUser(uid) {
+  blocked.add(uid);
+  try { await B.saveBlocks(blocked); } catch (e) { console.error(e); }
+  updateBadge();
+}
+$("blockBtn").addEventListener("click", async () => {
+  if (!current) return;
+  await blockUser(current.p.id); showNext();
+});
+function openReport(p) {
+  reportTarget = p;
+  $("rName").textContent = p.nickname;
+  $("reportOverlay").hidden = false; $("rReason").focus();
+}
+$("reportBtn").addEventListener("click", () => { if (current) openReport(current.p); });
+$("rCancel").addEventListener("click", () => { $("reportOverlay").hidden = true; });
+$("rSend").addEventListener("click", async () => {
+  const p = reportTarget; if (!p) return;
+  $("rSend").disabled = true;
+  try { if (!p.sample) await B.report(p.id, $("rReason").value); } catch (e) { console.error(e); }
+  await blockUser(p.id);
+  $("rSend").disabled = false; $("reportOverlay").hidden = true;
+  if (current && current.p.id === p.id) showNext();
+  if (!$("tab-matches").hidden) renderMatches();
+});
+
 /* ---------- マッチ ---------- */
-function matchedPeople() { return people.filter(p => liked.has(p.id) && likedMe.has(p.id)); }
+function matchedPeople() { return visible().filter(p => liked.has(p.id) && likedMe.has(p.id)); }
 function updateBadge() {
   const n = matchedPeople().length;
   $("matchBadge").textContent = n; $("matchBadge").hidden = n === 0;
 }
-function contactNode(threads, isSample) {
-  const span = document.createElement("span"); span.className = "contact";
-  if (isSample) { span.textContent = "サンプル会員のため連絡先はありません"; return span; }
-  if (!threads) { span.textContent = "Threads ID は未登録です"; return span; }
-  const a = document.createElement("a");
-  a.href = "https://www.threads.net/@" + encodeURIComponent(threads);
-  a.target = "_blank"; a.rel = "noopener noreferrer";
-  a.textContent = "@" + threads;
-  span.append("Threads：", a);
-  return span;
+function contactNodes(contacts, isSample) {
+  const box = document.createElement("div"); box.className = "contacts";
+  const line = t => { const s = document.createElement("span"); s.className = "contact"; s.textContent = t; return s; };
+  if (isSample) { box.append(line("サンプル会員のため連絡先はありません")); return box; }
+  const keys = Object.keys(CONTACTS).filter(k => contacts && contacts[k]);
+  if (!keys.length) { box.append(line("連絡先は未登録です")); return box; }
+  for (const k of keys) {
+    const c = CONTACTS[k], id = contacts[k];
+    const s = line(c.label + "：");
+    if (c.url) {
+      const a = document.createElement("a");
+      a.href = c.url(encodeURIComponent(id)); a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.textContent = "@" + id; s.append(a);
+    } else s.append(id);
+    box.append(s);
+  }
+  return box;
 }
 async function showMatch(p) {
   $("mSeal1").textContent = TYPES[me.type].seal;
   $("mSeal2").textContent = TYPES[p.type].seal;
   $("mText").textContent = `${p.nickname}さんもあなたにイイねしていました。`;
-  const threads = p.sample ? "" : await B.contactOf(p.id);
-  $("mContact").replaceChildren(contactNode(threads, p.sample));
+  const contacts = p.sample ? {} : await B.contactOf(p.id);
+  $("mContact").replaceChildren(contactNodes(contacts, p.sample));
   $("matchOverlay").hidden = false;
   $("mClose").focus();
 }
 $("mClose").addEventListener("click", () => { $("matchOverlay").hidden = true; });
 $("mToMatches").addEventListener("click", () => { $("matchOverlay").hidden = true; showTab("matches"); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") $("matchOverlay").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { $("matchOverlay").hidden = true; $("reportOverlay").hidden = true; } });
 
 async function renderMatches() {
   const list = matchedPeople();
-  const waiting = [...liked].filter(id => !likedMe.has(id)).length;
-  const fans = [...likedMe].filter(id => !liked.has(id)).length;
-  $("likedStat").replaceChildren(
-    "イイねした人 ", Object.assign(document.createElement("b"), { textContent: liked.size }),
-    " 人（返事待ち ", Object.assign(document.createElement("b"), { textContent: waiting }),
-    " 人）・まだ見ぬあなたのファン ", Object.assign(document.createElement("b"), { textContent: fans }), " 人"
-  );
+  const waiting = [...liked].filter(id => !likedMe.has(id) && !blocked.has(id)).length;
+  const fans = [...likedMe].filter(id => !liked.has(id) && !blocked.has(id)).length;
+  const b = n => Object.assign(document.createElement("b"), { textContent: n });
+  $("likedStat").replaceChildren("イイねした人 ", b(liked.size), " 人（返事待ち ", b(waiting), " 人）・まだ見ぬあなたのファン ", b(fans), " 人");
   if (!list.length) {
     const p = document.createElement("p"); p.className = "stat";
     p.textContent = "まだマッチはありません。相性の高い人にイイねしてみましょう。";
     $("matchList").replaceChildren(p); return;
   }
   const items = await Promise.all(list.map(async p => {
-    const threads = p.sample ? "" : await B.contactOf(p.id);
+    const contacts = p.sample ? {} : await B.contactOf(p.id);
     const row = document.createElement("div"); row.className = "match-item";
     const s = document.createElement("div"); s.className = "seal"; s.textContent = TYPES[p.type].seal;
     const name = document.createElement("strong");
     name.textContent = `${p.nickname}（${TYPES[p.type].name}・相性${compat(me, p).score}%）`;
     if (p.sample) { const t = document.createElement("span"); t.className = "sample-tag"; t.textContent = "サンプル"; name.append(t); }
-    row.append(s, name, contactNode(threads, p.sample));
+    const side = document.createElement("div"); side.style.minWidth = "0";
+    const rep = document.createElement("button"); rep.className = "linkish"; rep.textContent = "通報・ブロック";
+    rep.addEventListener("click", () => openReport(p));
+    side.append(contactNodes(contacts, p.sample), rep);
+    row.append(s, name, side);
     return row;
   }));
   $("matchList").replaceChildren(...items);
@@ -618,15 +822,34 @@ function renderMe() {
   $("meType").textContent = TYPES[me.type].name;
   $("meBio").textContent = me.bio || ""; $("meBio").hidden = !me.bio;
   $("meGenres").replaceChildren(...me.genres.map(g => chip(g)));
-  $("meThreads").textContent = myThreads ? "@" + myThreads : "未登録";
+  $("meContacts").replaceChildren(contactNodes(myContacts, false));
+  $("logoutBtn").hidden = B.demo;
 }
 $("editBtn").addEventListener("click", () => openSetup(true));
 $("copyBtn").addEventListener("click", () => {
   const url = location.href.split(/[?#]/)[0];
-  const txt = `都市伝説マッチングはじめました。\n私は【${TYPES[me.type].name}】。好きなジャンルは${me.genres.slice(0, 3).join("・")}。\n話が合いそうな人、イイねして！\n${url}\n#都市伝説マッチング`;
+  const txt = `都市伝説の話ができる友だち、さがしてます。\n私は【${TYPES[me.type].name}】。好きなジャンルは${me.genres.slice(0, 3).join("・")}。\n話が合いそうな人、イイねして！\n${url}\n#都市伝説マッチング`;
   const done = msg => { $("toast").textContent = msg; $("toast").hidden = false; };
   try { navigator.clipboard.writeText(txt).then(() => done("紹介文をコピーしました"), () => done("コピーできませんでした")); }
   catch (e) { done("コピーできませんでした"); }
+});
+$("logoutBtn").addEventListener("click", () => B.logout());
+$("deleteBtn").addEventListener("click", () => { $("deleteConfirm").hidden = false; });
+$("deleteNo").addEventListener("click", () => { $("deleteConfirm").hidden = true; });
+$("deleteYes").addEventListener("click", async () => {
+  $("deleteYes").disabled = true; showErr("meErr", "");
+  try {
+    await B.deleteAccount();
+    store.del("tm_passed");
+    me = null; myContacts = {}; liked = new Set(); likedMe = new Set(); blocked = new Set(); passed = new Set();
+    $("deleteConfirm").hidden = true;
+    if (B.demo) openSetup(false);
+  } catch (e) {
+    console.error(e);
+    showErr("meErr", e.code === "auth/requires-recent-login"
+      ? "データは削除しました。安全のため、いったんログアウトして再ログインしてから、もう一度「退会する」を押してください。"
+      : "退会できませんでした。もう一度お試しください。");
+  } finally { $("deleteYes").disabled = false; }
 });
 
 /* ---------- ホーム画面に追加 ---------- */
@@ -641,24 +864,31 @@ $("installBtn").addEventListener("click", async () => {
 if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) $("iosHint").hidden = false;
 
 /* ---------- 起動 ---------- */
+async function enter() {
+  show("loading");
+  const mine = await B.getMe();
+  me = mine.profile; myContacts = mine.contacts || {};
+  [people, liked, likedMe, blocked] = await Promise.all([B.listProfiles(), B.myLikes(), B.likesToMe(), B.getBlocks()]);
+  people = people.filter(p => TYPES[p.type] && Array.isArray(p.genres));
+  renderFilter();
+  if (!me) { openSetup(false); return; }
+  show("app");
+  renderMe(); updateBadge(); buildQueue(); showTab("discover");
+}
 (async function start() {
   $("modeLabel").textContent = B.label;
   try {
-    await B.init();
-    const mine = await B.getMe();
-    me = mine.profile; myThreads = mine.threads || "";
-    [people, liked, likedMe] = await Promise.all([B.listProfiles(), B.myLikes(), B.likesToMe()]);
-    people = people.filter(p => TYPES[p.type] && Array.isArray(p.genres));
-    $("loading").hidden = true;
-    renderFilter();
-    if (!me) { openSetup(false); return; }
-    $("app").hidden = false;
-    renderMe(); updateBadge(); buildQueue();
+    await B.init(user => {
+      if (!user) { show("login"); return; }
+      enter().catch(e => {
+        console.error(e); show("loading");
+        $("loading").hidden = true; showErr("fatal", "データを読み込めませんでした。時間をおいて再読み込みしてください。");
+      });
+    });
   } catch (e) {
     console.error(e);
     $("loading").hidden = true;
-    $("fatal").textContent = "接続できませんでした。時間をおいて再読み込みしてください。";
-    $("fatal").hidden = false;
+    showErr("fatal", "接続できませんでした。時間をおいて再読み込みしてください。");
   }
 })();
 </script>
