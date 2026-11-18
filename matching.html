@@ -552,12 +552,15 @@ const AUTH_MSG = {
   "auth/too-many-requests": "試行が多すぎます。少し時間をおいてください。",
   "auth/popup-closed-by-user": "",
   "auth/cancelled-popup-request": "",
-  "auth/network-request-failed": "通信できませんでした。電波の良いところでもう一度どうぞ。"
+  "auth/network-request-failed": "通信できませんでした。電波の良いところでもう一度どうぞ。",
+  "auth/unauthorized-domain": "このサイトのドメインがFirebaseに登録されていません（運営者向け：Authentication → 設定 → 承認済みドメイン）。",
+  "auth/operation-not-allowed": "このログイン方法がオフになっています（運営者向け：Authentication → ログイン方法）。",
+  "auth/configuration-not-found": "Firebaseのログイン設定が見つかりません（運営者向け：Authentication の「始める」が済んでいるか確認）。"
 };
 async function authAction(fn) {
   showErr("loginErr", ""); $("loginInfo").hidden = true;
   try { await fn(); }
-  catch (e) { console.error(e); showErr("loginErr", e.code in AUTH_MSG ? AUTH_MSG[e.code] : "ログインできませんでした。もう一度お試しください。"); }
+  catch (e) { console.error(e); showErr("loginErr", e.code in AUTH_MSG ? AUTH_MSG[e.code] : `ログインできませんでした。もう一度お試しください。（${e.code || e.message || "不明なエラー"}）`); }
 }
 const emailPw = () => [clean($("lEmail").value), $("lPass").value];
 $("googleBtn").addEventListener("click", () => authAction(() => B.loginGoogle()));
