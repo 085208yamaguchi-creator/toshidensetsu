@@ -1,6 +1,6 @@
 // オフラインでも画面が開けるように、アプリ本体だけをキャッシュする。
 // Firebase など外部への通信はキャッシュしない。
-const CACHE = "toshidensetsu-v4";
+const CACHE = "toshidensetsu-v5";
 const SHELL = ["./", "./index.html", "./matching.html", "./terms.html", "./firebase-config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
