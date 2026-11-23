@@ -114,6 +114,9 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .person-head .seal { width: 64px; height: 64px; font-size: 30px; }
 .person-name { font-family: var(--font-display); font-size: 26px; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
 .person-type { font-size: 13px; color: var(--mute); }
+.founder { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--lantern-ink); background: linear-gradient(135deg, #f7d08f, var(--lantern) 55%, #d9944a); border-radius: 999px; padding: 1px 9px 1px 4px; margin-left: 8px; vertical-align: middle; line-height: 1.7; white-space: nowrap; }
+.founder::before { content: "創"; display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--lantern-ink); color: var(--lantern); font-family: var(--font-display); font-size: 11px; font-weight: 400; }
+.founder-note { margin: 0; font-size: 13px; color: var(--lantern); border: 1px dashed var(--lantern); border-radius: 10px; padding: 8px 12px; }
 .sample-tag { display: inline-block; font-size: 11px; letter-spacing: .1em; border: 1px dashed var(--mute); color: var(--mute); border-radius: 4px; padding: 0 6px; margin-left: 6px; vertical-align: middle; }
 .compat { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center; background: var(--panel-2); border-radius: 10px; padding: 12px 14px; }
 .compat-num { font-family: var(--font-display); font-size: 40px; line-height: 1; color: var(--lantern); font-variant-numeric: tabular-nums; grid-row: span 2; }
@@ -182,6 +185,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
   <!-- ログイン -->
   <section class="card" id="login" hidden>
     <p class="lead">都市伝説の話ができる友だちを見つける、趣味友マッチングです。はじめての人も、ログインするとそのまま登録に進みます。</p>
+    <p class="founder-note" id="founderNote" hidden></p>
     <button class="btn" id="googleBtn">Googleでログイン</button>
     <div class="divider">またはメールで</div>
     <label class="field" for="lEmail">メールアドレス
@@ -202,6 +206,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
   <!-- プロフィール登録 / 編集 -->
   <section class="card" id="setup" hidden>
     <p class="lead" id="setupLead">好きなジャンルを選ぶと、話が合いそうな人が順番に出てきます。お互いにイイねするとマッチして、相手のSNSが見られるようになります。恋愛・出会い目的の利用はできません。</p>
+    <p class="founder-note" id="founderNote2" hidden></p>
     <label class="field" for="fNick">ニックネーム（20文字まで）
       <input type="text" id="fNick" maxlength="20" placeholder="例：深夜のUMA観測員" autocomplete="off">
     </label>
@@ -252,7 +257,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
           <div class="person-head">
             <div class="seal" id="pSeal"></div>
             <div style="min-width:0">
-              <p class="person-name"><span id="pName"></span><span class="sample-tag" id="pSample" hidden>サンプル</span></p>
+              <p class="person-name"><span id="pName"></span><span class="founder" id="pFounder" hidden>創設メンバー</span><span class="sample-tag" id="pSample" hidden>サンプル</span></p>
               <div class="person-type" id="pType"></div>
             </div>
           </div>
@@ -389,6 +394,11 @@ const CONTACTS = {
   discord:   { label: "Discord",   input: "cDiscord",   pattern: /^[a-z0-9._]{2,32}$/,    url: null }
 };
 
+// 創設メンバーの締め切り（日本時間 2026/12/23 23:59）。firestore.rules と同じ日時にすること。
+const FOUNDER_DEADLINE = Date.UTC(2026, 11, 23, 15, 0, 0);
+const founderOpen = () => Date.now() < FOUNDER_DEADLINE;
+function founderBadge() { const s = document.createElement("span"); s.className = "founder"; s.textContent = "創設メンバー"; return s; }
+
 /* ---------- 相性計算 ---------- */
 function compat(me, other) {
   const common = other.genres.filter(g => me.genres.includes(g));
@@ -418,7 +428,7 @@ function showErr(id, msg) { $(id).textContent = msg; $(id).hidden = !msg; }
 /* ---------- デモ用バックエンド（端末内だけで動く） ---------- */
 const SAMPLES = [
   { id: "s1", nickname: "深夜のUMA観測員", type: "U", genres: ["UFO・宇宙人", "UMA・未確認生物", "パラレルワールド"], bio: "ツチノコとモスマンの話なら朝まで。ナスカの地上絵も好き。", likesYou: true },
-  { id: "s2", nickname: "きさらぎ駅の常連", type: "G", genres: ["ネット怪談", "心霊・怪談", "学校の怪談", "呪物・禁足地"], bio: "怖い話を聞くのも話すのも好き。くねくねの正体を一緒に考えたい。", likesYou: true },
+  { id: "s2", nickname: "きさらぎ駅の常連", type: "G", genres: ["ネット怪談", "心霊・怪談", "学校の怪談", "呪物・禁足地"], bio: "怖い話を聞くのも話すのも好き。くねくねの正体を一緒に考えたい。", likesYou: true, founder: true },
   { id: "s3", nickname: "ピラミッド測量係", type: "A", genres: ["古代文明・オーパーツ", "歴史ミステリー", "UFO・宇宙人"], bio: "オーパーツの年代を調べるのが趣味。ムー大陸派です。", likesYou: false },
   { id: "s4", nickname: "ソースどこ子", type: "K", genres: ["秘密結社", "予言・終末論", "歴史ミステリー"], bio: "信じる前にまず一次資料。それでも残る謎が一番好き。", likesYou: true },
   { id: "s5", nickname: "鳥居をくぐる人", type: "P", genres: ["パワースポット", "心霊・怪談", "呪物・禁足地"], bio: "週末は神社巡り。禁足地の話を静かに語り合える人と。", likesYou: false },
@@ -434,6 +444,7 @@ const DemoBackend = {
   async init(onUser) { onUser({ uid: "me" }); },
   async getMe() { return { profile: store.get("tm_profile", null), contacts: store.get("tm_contacts", {}) }; },
   async saveMe(profile, contacts) { store.set("tm_profile", profile); store.set("tm_contacts", contacts); },
+  async markFounder() { const p = store.get("tm_profile", null); if (p) store.set("tm_profile", { ...p, founder: true }); },
   async listProfiles() { return SAMPLES.map(({ likesYou, ...p }) => p); },
   async like(uid) {
     const likes = new Set(store.get("tm_likes", [])); likes.add(uid); store.set("tm_likes", [...likes]);
@@ -494,6 +505,7 @@ const FirebaseBackend = {
     await this.fs.collection("profiles").doc(this.uid).set({ ...profile, updatedAt: Date.now() });
     await this.fs.collection("contacts").doc(this.uid).set(contacts);
   },
+  markFounder() { return this.fs.collection("profiles").doc(this.uid).update({ founder: true }); },
   async listProfiles() {
     const snap = await this.fs.collection("profiles").orderBy("updatedAt", "desc").limit(300).get();
     return snap.docs.filter(d => d.id !== this.uid).map(d => ({ id: d.id, ...d.data() }));
@@ -645,7 +657,14 @@ $("saveBtn").addEventListener("click", async () => {
   $("saveBtn").disabled = true;
   try {
     const profile = { nickname, type: draft.type, genres: draft.genres, bio, agreedAt: me?.agreedAt || Date.now() };
-    await B.saveMe(profile, contacts);
+    if (me?.founder || founderOpen()) profile.founder = true;
+    try { await B.saveMe(profile, contacts); }
+    catch (e) {
+      // 締め切り直後などで称号が付けられなかったときは、称号なしで保存し直す
+      if (!profile.founder || me?.founder) throw e;
+      delete profile.founder;
+      await B.saveMe(profile, contacts);
+    }
     me = profile; myContacts = contacts;
     show("app");
     renderMe(); buildQueue(); showTab("discover");
@@ -701,6 +720,7 @@ function showNext() {
   $("pSeal").textContent = TYPES[p.type].seal;
   $("pName").textContent = p.nickname;
   $("pSample").hidden = !p.sample;
+  $("pFounder").hidden = !p.founder;
   $("pType").textContent = TYPES[p.type].name;
   const sm = document.createElement("small"); sm.textContent = "%";
   $("pScore").replaceChildren(String(c.score), sm);
@@ -814,6 +834,7 @@ async function renderMatches() {
     const s = document.createElement("div"); s.className = "seal"; s.textContent = TYPES[p.type].seal;
     const name = document.createElement("strong");
     name.textContent = `${p.nickname}（${TYPES[p.type].name}・相性${compat(me, p).score}%）`;
+    if (p.founder) name.append(founderBadge());
     if (p.sample) { const t = document.createElement("span"); t.className = "sample-tag"; t.textContent = "サンプル"; name.append(t); }
     const side = document.createElement("div"); side.style.minWidth = "0";
     const rep = document.createElement("button"); rep.className = "linkish"; rep.textContent = "通報・ブロック";
@@ -828,7 +849,8 @@ async function renderMatches() {
 /* ---------- じぶん ---------- */
 function renderMe() {
   $("meSeal").textContent = TYPES[me.type].seal;
-  $("meName").textContent = me.nickname;
+  $("meName").replaceChildren(me.nickname);
+  if (me.founder) $("meName").append(founderBadge());
   $("meType").textContent = TYPES[me.type].name;
   $("meBio").textContent = me.bio || ""; $("meBio").hidden = !me.bio;
   $("meGenres").replaceChildren(...me.genres.map(g => chip(g)));
@@ -882,11 +904,20 @@ async function enter() {
   people = people.filter(p => TYPES[p.type] && Array.isArray(p.genres));
   renderFilter();
   if (!me) { openSetup(false); return; }
+  if (!me.founder && founderOpen()) {
+    try { await B.markFounder(); me = { ...me, founder: true }; } catch (e) { console.error(e); }
+  }
   show("app");
   renderMe(); updateBadge(); buildQueue(); showTab("discover");
 }
 (async function start() {
   $("modeLabel").textContent = B.label;
+  if (founderOpen()) {
+    $("founderNote").textContent = "オープン記念：12月23日までに登録した人には「創設メンバー」の称号がずっと付きます。";
+    $("founderNote").hidden = false;
+    $("founderNote2").textContent = $("founderNote").textContent;
+    $("founderNote2").hidden = false;
+  }
   try {
     await B.init(user => {
       if (!user) { show("login"); return; }

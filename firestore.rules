@@ -6,13 +6,23 @@ service cloud.firestore {
     function isMe(uid) { return signedIn() && request.auth.uid == uid; }
 
     function validProfile(d) {
-      return d.keys().hasOnly(['nickname', 'type', 'genres', 'bio', 'agreedAt', 'updatedAt'])
+      return d.keys().hasOnly(['nickname', 'type', 'genres', 'bio', 'agreedAt', 'updatedAt', 'founder'])
         && d.nickname is string && d.nickname.size() >= 1 && d.nickname.size() <= 20
         && d.type in ['A', 'U', 'S', 'P', 'G', 'K']
         && d.genres is list && d.genres.size() >= 1 && d.genres.size() <= 14
         && d.bio is string && d.bio.size() <= 140
         && d.agreedAt is int
         && d.updatedAt is int;
+    }
+
+    // 創設メンバー: 締め切り（日本時間 2026/12/23 23:59）までに保存した人だけが付けられる。
+    // 一度付いた称号はそのまま残せる。matching.html の FOUNDER_DEADLINE と同じ日時にすること。
+    function founderOk(d) {
+      return !('founder' in d)
+        || d.founder == false
+        || (d.founder == true && (
+             request.time < timestamp.date(2026, 12, 23) + duration.value(15, 'h')
+             || (resource != null && resource.data.get('founder', false) == true)));
     }
 
     function okHandle(d, key, max) {
@@ -33,7 +43,7 @@ service cloud.firestore {
     // プロフィール: ログイン中なら誰でも読める。書けるのは本人だけ。
     match /profiles/{uid} {
       allow read: if signedIn();
-      allow create, update: if isMe(uid) && validProfile(request.resource.data);
+      allow create, update: if isMe(uid) && validProfile(request.resource.data) && founderOk(request.resource.data);
       allow delete: if isMe(uid);
     }
 
