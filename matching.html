@@ -170,6 +170,13 @@ a { color: var(--moon); }
 .safety { display: flex; justify-content: flex-end; gap: 16px; }
 select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
 .contacts { display: flex; flex-direction: column; gap: 2px; }
+.note-card { display: flex; align-items: center; gap: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; color: var(--ink); text-decoration: none; }
+.note-card:hover { border-color: var(--lantern); }
+.note-card .seal { width: 44px; height: 44px; font-size: 20px; }
+.note-card div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.note-card small { font-size: 12px; letter-spacing: .1em; color: var(--mute); }
+.note-card strong { font-size: 15px; }
+.note-card span.go { margin-left: auto; color: var(--lantern); font-size: 13px; white-space: nowrap; }
 .danger-zone { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 @media (max-width: 380px) { .type-pick { grid-template-columns: repeat(2, 1fr); } }
 </style>
@@ -307,6 +314,15 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
           <button class="btn-ghost" id="copyBtn">友だちに紹介する</button>
           <span class="toast" id="toast" hidden></span>
         </div>
+        <a class="note-card" href="https://note.com/bright_stilt607/membership" target="_blank" rel="noopener">
+          <div class="seal">真</div>
+          <div>
+            <small>運営「真実を知りたい者」</small>
+            <strong>noteメンバーシップ</strong>
+            <span class="stat" style="font-size:13px">都市伝説・ミステリーの話をもっと深く読みたい人へ。</span>
+          </div>
+          <span class="go">ひらく ›</span>
+        </a>
         <div class="row" id="installRow" hidden>
           <button class="btn-ghost" id="installBtn">ホーム画面に追加</button>
         </div>
@@ -328,7 +344,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
 
   <div class="foot">
     <p style="margin:0">※都市伝説好きの友だちさがし専用です。恋愛・出会い目的の利用は禁止しています。</p>
-    <p style="margin:0"><a href="index.html">都市伝説相性診断</a> ・ <a href="terms.html">利用規約・プライバシーポリシー</a></p>
+    <p style="margin:0"><a href="index.html">都市伝説相性診断</a> ・ <a href="terms.html">利用規約・プライバシーポリシー</a> ・ <a href="https://note.com/bright_stilt607/membership" target="_blank" rel="noopener">運営のnoteメンバーシップ</a></p>
   </div>
 </main>
 
