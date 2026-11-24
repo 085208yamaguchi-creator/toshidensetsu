@@ -138,6 +138,22 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .match-item strong { font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
 .match-item .contact { font-size: 14px; color: var(--mute); min-width: 0; overflow-wrap: anywhere; }
 .match-item a { color: var(--moon); }
+.match-item .ice { grid-column: 1 / -1; }
+.ice { text-align: left; background: var(--night); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.ice small { font-size: 12px; letter-spacing: .12em; color: var(--lantern); }
+.ice p { margin: 0; font-size: 15px; line-height: 1.6; }
+.ice .row { gap: 8px; }
+.ice .btn-ghost, .ice a.btn-ghost { font-size: 13px; padding: 7px 13px; text-decoration: none; display: inline-block; }
+.ice a.btn-ghost { color: var(--ink); border-color: var(--lantern); }
+.ice .hint { font-size: 12px; color: var(--mute); }
+.community { display: flex; align-items: center; gap: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; color: var(--ink); text-decoration: none; text-align: left; width: 100%; }
+.community:hover { border-color: var(--moon); }
+.community .seal { width: 44px; height: 44px; font-size: 20px; border-color: var(--moon); color: var(--moon); }
+.community div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.community small { font-size: 12px; letter-spacing: .1em; color: var(--mute); }
+.community strong { font-size: 15px; }
+.community .go { margin-left: auto; color: var(--moon); font-size: 13px; white-space: nowrap; }
+.overlay .card { max-height: calc(100vh - 32px); overflow-y: auto; }
 .stat { font-size: 14px; color: var(--mute); margin: 0; }
 .stat b { color: var(--ink); font-variant-numeric: tabular-nums; }
 
@@ -294,6 +310,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
 
       <section id="tab-matches" class="card" hidden>
         <p class="stat" id="likedStat"></p>
+        <div id="matchCommunity"></div>
         <h2>マッチした人</h2>
         <div class="match-list" id="matchList"></div>
       </section>
@@ -314,6 +331,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
           <button class="btn-ghost" id="copyBtn">友だちに紹介する</button>
           <span class="toast" id="toast" hidden></span>
         </div>
+        <div id="meCommunity"></div>
         <a class="note-card" href="https://note.com/bright_stilt607/membership" target="_blank" rel="noopener">
           <div class="seal">真</div>
           <div>
@@ -353,7 +371,8 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
     <div class="pair"><div class="seal" id="mSeal1"></div><i>×</i><div class="seal" id="mSeal2"></div></div>
     <p class="match-title" id="mTitle">マッチ成立</p>
     <p style="margin:0" id="mText"></p>
-    <p class="stat" id="mContact"></p>
+    <div class="stat" id="mContact" style="width:100%"></div>
+    <div id="mCommunity" style="width:100%"></div>
     <div class="row" style="justify-content:center">
       <button class="btn" id="mToMatches">マッチ一覧を見る</button>
       <button class="btn-ghost" id="mClose">さがすを続ける</button>
@@ -414,6 +433,91 @@ const CONTACTS = {
 const FOUNDER_DEADLINE = Date.UTC(2026, 11, 23, 15, 0, 0);
 const founderOpen = () => Date.now() < FOUNDER_DEADLINE;
 function founderBadge() { const s = document.createElement("span"); s.className = "founder"; s.textContent = "創設メンバー"; return s; }
+
+// コミュニティ（Discordサーバー）の招待URL。空文字のあいだは表示しない。
+const COMMUNITY_URL = "";
+
+// 話しはじめのお題（ジャンルごと）
+const TOPICS = {
+  "UFO・宇宙人": ["もし宇宙人に1つだけ質問できるなら、何を聞く？", "これまで見た中でいちばん本物っぽいUFO映像は？", "宇宙人はもう地球に住んでいると思う？"],
+  "古代文明・オーパーツ": ["ピラミッドを作ったのは誰だと思う？", "いちばん説明できないと思うオーパーツは？", "ムー大陸とアトランティス、あるならどっち派？"],
+  "UMA・未確認生物": ["ツチノコはいると思う？いるならどこにいそう？", "一度会ってみたいUMAは？", "ネッシーの正体、何だと思う？"],
+  "心霊・怪談": ["今まで聞いた中でいちばん怖かった話は？", "霊感ってあると思う？", "心霊スポット、行ったことある？行きたい？"],
+  "ネット怪談": ["きさらぎ駅、行ってみたい？絶対イヤ？", "いちばん好きなネット怪談は？", "くねくねの正体、何だと思う？"],
+  "学校の怪談": ["自分の学校にあった七不思議、覚えてる？", "トイレの花子さん、呼んだことある？", "夜の学校でいちばん怖い場所はどこ？"],
+  "秘密結社": ["本当にありそうだと思う秘密結社は？", "お札や建物で気になるシンボル、ある？", "もし秘密結社に誘われたら入る？"],
+  "予言・終末論": ["いちばん当たってると思う予言は？", "ノストラダムスの予言、どう解釈してる？", "地球の終わりが来るなら、最後に何する？"],
+  "パラレルワールド": ["マンデラ効果、体験したことある？", "別の世界線の自分は何してると思う？", "パラレルワールドに行けるなら行く？"],
+  "タイムトラベラー": ["タイムマシンがあったら、過去と未来どっちに行く？", "ジョン・タイターの話、信じてる？", "未来人だと思う有名人はいる？"],
+  "パワースポット": ["いちばん「何か感じた」場所はどこ？", "おすすめの神社やパワースポットは？", "パワースポット巡り、一緒に行くならどこ？"],
+  "呪物・禁足地": ["絶対に近づきたくない禁足地は？", "いちばん怖いと思う呪物は？", "呪物展、行ってみたい？"],
+  "歴史ミステリー": ["徳川埋蔵金はまだどこかにあると思う？", "本能寺の変、本当の黒幕は誰？", "いちばん真相が知りたい歴史の謎は？"],
+  "昭和の都市伝説": ["口裂け女の話、最初に聞いたのはいつ？", "人面犬、見たって人に会ったことある？", "好きな昭和の都市伝説は？"]
+};
+const FALLBACK_TOPICS = ["最近いちばんハマってる都市伝説は？", "都市伝説にハマったきっかけは？", "1つだけ真相がわかるなら、何を知りたい？"];
+// 2人に同じお題が出るよう、2人のIDから決める
+function topicFor(other) {
+  const common = other.genres.filter(g => me.genres.includes(g) && TOPICS[g]);
+  const pool = common.length ? common.flatMap(g => TOPICS[g]) : FALLBACK_TOPICS;
+  const key = [B.uid || "me", other.id].sort().join("|");
+  let h = 0; for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length];
+}
+function greeting(topic) {
+  return `はじめまして！都市伝説マッチングでマッチした${me.nickname}です。\n${topic}\nよかったら語りましょう！`;
+}
+async function copyText(txt) {
+  try { await navigator.clipboard.writeText(txt); return true; } catch (e) { return false; }
+}
+// お題＋あいさつ文のコピー＋相手のSNSを開くボタン
+function icebreakerNode(p, contacts) {
+  const topic = topicFor(p), msg = greeting(topic);
+  const box = document.createElement("div"); box.className = "ice";
+  const label = document.createElement("small"); label.textContent = "ふたりのお題";
+  const q = document.createElement("p"); q.textContent = "「" + topic + "」";
+  const row = document.createElement("div"); row.className = "row";
+  const hint = document.createElement("span"); hint.className = "hint";
+  hint.textContent = "あいさつ文をコピーして、相手のSNSのDMに貼りつけて送れます。";
+  const done = ok => { hint.textContent = ok ? "あいさつ文をコピーしました。DMに貼りつけて送ってください。" : "コピーできませんでした。お題を見ながら話しかけてみてください。"; };
+  const copyBtn = document.createElement("button"); copyBtn.className = "btn-ghost"; copyBtn.textContent = "あいさつ文をコピー";
+  copyBtn.addEventListener("click", async () => done(await copyText(msg)));
+  row.append(copyBtn);
+  if (!p.sample && contacts) {
+    for (const k of ["threads", "x", "instagram"]) {
+      if (!contacts[k]) continue;
+      const a = document.createElement("a"); a.className = "btn-ghost"; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.href = k === "instagram" ? "https://ig.me/m/" + encodeURIComponent(contacts[k]) : CONTACTS[k].url(encodeURIComponent(contacts[k]));
+      a.textContent = `コピーして${CONTACTS[k].label}を開く`;
+      a.addEventListener("click", () => { copyText(msg).then(done); });
+      row.append(a);
+    }
+    if (contacts.discord) {
+      const d = document.createElement("span"); d.className = "hint";
+      d.textContent = `Discordの場合は、フレンド追加で「${contacts.discord}」を検索してください。`;
+      box.append(label, q, row, hint, d); return box;
+    }
+  }
+  box.append(label, q, row, hint);
+  return box;
+}
+function communityNode(lead) {
+  if (!COMMUNITY_URL) return null;
+  const a = document.createElement("a"); a.className = "community"; a.href = COMMUNITY_URL; a.target = "_blank"; a.rel = "noopener noreferrer";
+  const s = document.createElement("div"); s.className = "seal"; s.textContent = "会";
+  const t = document.createElement("div");
+  const sm = document.createElement("small"); sm.textContent = lead;
+  const st = document.createElement("strong"); st.textContent = "夜の語り場（Discord）";
+  const sp = document.createElement("span"); sp.className = "stat"; sp.style.fontSize = "13px"; sp.textContent = "ジャンル別の部屋で、みんなで語れます。";
+  t.append(sm, st, sp);
+  const go = document.createElement("span"); go.className = "go"; go.textContent = "参加する ›";
+  a.append(s, t, go);
+  return a;
+}
+function renderCommunity() {
+  for (const [id, lead] of [["meCommunity", "会員みんなの集まり"], ["matchCommunity", "マッチした人とも、みんなとも"], ["mCommunity", "みんなで語るなら"]]) {
+    const n = communityNode(lead); $(id).replaceChildren(...(n ? [n] : []));
+  }
+}
 
 /* ---------- 相性計算 ---------- */
 function compat(me, other) {
@@ -683,7 +787,7 @@ $("saveBtn").addEventListener("click", async () => {
     }
     me = profile; myContacts = contacts;
     show("app");
-    renderMe(); buildQueue(); showTab("discover");
+    renderMe(); buildQueue(); renderCommunity(); showTab("discover");
   } catch (e) {
     console.error(e);
     showErr("formErr", "保存できませんでした。通信状態を確認して、もう一度押してください。");
@@ -825,7 +929,8 @@ async function showMatch(p) {
   $("mSeal2").textContent = TYPES[p.type].seal;
   $("mText").textContent = `${p.nickname}さんもあなたにイイねしていました。`;
   const contacts = p.sample ? {} : await B.contactOf(p.id);
-  $("mContact").replaceChildren(contactNodes(contacts, p.sample));
+  $("mContact").replaceChildren(contactNodes(contacts, p.sample), icebreakerNode(p, contacts));
+  $("mContact").firstChild.style.marginBottom = "10px";
   $("matchOverlay").hidden = false;
   $("mClose").focus();
 }
@@ -856,7 +961,7 @@ async function renderMatches() {
     const rep = document.createElement("button"); rep.className = "linkish"; rep.textContent = "通報・ブロック";
     rep.addEventListener("click", () => openReport(p));
     side.append(contactNodes(contacts, p.sample), rep);
-    row.append(s, name, side);
+    row.append(s, name, side, icebreakerNode(p, contacts));
     return row;
   }));
   $("matchList").replaceChildren(...items);
@@ -924,7 +1029,7 @@ async function enter() {
     try { await B.markFounder(); me = { ...me, founder: true }; } catch (e) { console.error(e); }
   }
   show("app");
-  renderMe(); updateBadge(); buildQueue(); showTab("discover");
+  renderMe(); updateBadge(); buildQueue(); renderCommunity(); showTab("discover");
 }
 (async function start() {
   $("modeLabel").textContent = B.label;
