@@ -153,6 +153,11 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .community small { font-size: 12px; letter-spacing: .1em; color: var(--mute); }
 .community strong { font-size: 15px; }
 .community .go { margin-left: auto; color: var(--moon); font-size: 13px; white-space: nowrap; }
+.community .rooms { font-size: 13px; color: var(--moon); }
+.community-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.community-hint { margin: 0; font-size: 12px; color: var(--mute); text-align: left; }
+.welcome-steps { margin: 0; padding: 0 0 0 1.3em; text-align: left; display: flex; flex-direction: column; gap: 6px; font-size: 14px; width: 100%; }
+.welcome-steps b { color: var(--lantern); font-weight: 500; }
 .overlay .card { max-height: calc(100vh - 32px); overflow-y: auto; }
 .stat { font-size: 14px; color: var(--mute); margin: 0; }
 .stat b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -305,6 +310,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
           <div class="seal">尽</div>
           <p style="margin:0" id="noMoreText">いまは表示できる人がいません。</p>
           <button class="btn-ghost" id="resetPass">スキップした人をもう一度見る</button>
+          <div id="emptyCommunity" style="width:100%"></div>
         </div>
       </section>
 
@@ -365,6 +371,21 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
     <p style="margin:0"><a href="index.html">都市伝説相性診断</a> ・ <a href="terms.html">利用規約・プライバシーポリシー</a> ・ <a href="https://note.com/bright_stilt607/membership" target="_blank" rel="noopener">運営のnoteメンバーシップ</a></p>
   </div>
 </main>
+
+<div class="overlay" id="welcomeOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="wTitle">
+  <div class="card">
+    <div class="seal" id="wSeal"></div>
+    <p class="match-title" id="wTitle">登録完了！</p>
+    <p style="margin:0" id="wText"></p>
+    <ol class="welcome-steps">
+      <li><b>語り場（Discord）</b>に参加して、👋自己紹介に「マッチングから来ました」とひとこと</li>
+      <li>あなた向けの部屋で、気になる話題に参加</li>
+      <li>「さがす」で相性のいい人にイイね</li>
+    </ol>
+    <div id="wCommunity" style="width:100%"></div>
+    <button class="btn-ghost" id="wLater">あとで。さきに仲間をさがす</button>
+  </div>
+</div>
 
 <div class="overlay" id="matchOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="card">
@@ -500,23 +521,61 @@ function icebreakerNode(p, contacts) {
   box.append(label, q, row, hint);
   return box;
 }
-function communityNode(lead) {
+// 好きなジャンル → Discordの部屋
+const ROOMS = {
+  "UFO・宇宙人": "🛸ufo-宇宙人", "UMA・未確認生物": "🛸ufo-宇宙人",
+  "古代文明・オーパーツ": "🔺古代文明", "歴史ミステリー": "🔺古代文明",
+  "心霊・怪談": "👻怪談-心霊", "ネット怪談": "👻怪談-心霊", "学校の怪談": "👻怪談-心霊", "呪物・禁足地": "👻怪談-心霊", "昭和の都市伝説": "👻怪談-心霊",
+  "秘密結社": "🕵️秘密結社-陰謀論", "予言・終末論": "🕵️秘密結社-陰謀論",
+  "パラレルワールド": "🌀パラレル-時間", "タイムトラベラー": "🌀パラレル-時間",
+  "パワースポット": "💬一般（雑談）"
+};
+function myRooms() {
+  if (!me) return [];
+  return [...new Set(me.genres.map(g => ROOMS[g]).filter(Boolean))].slice(0, 3);
+}
+function communityNode(lead, withHint) {
   if (!COMMUNITY_URL) return null;
+  const wrap = document.createElement("div"); wrap.className = "community-wrap";
   const a = document.createElement("a"); a.className = "community"; a.href = COMMUNITY_URL; a.target = "_blank"; a.rel = "noopener noreferrer";
   const s = document.createElement("div"); s.className = "seal"; s.textContent = "会";
   const t = document.createElement("div");
   const sm = document.createElement("small"); sm.textContent = lead;
   const st = document.createElement("strong"); st.textContent = "夜の語り場（Discord）";
-  const sp = document.createElement("span"); sp.className = "stat"; sp.style.fontSize = "13px"; sp.textContent = "ジャンル別の部屋で、みんなで語れます。";
-  t.append(sm, st, sp);
+  t.append(sm, st);
+  const rooms = myRooms();
+  const sp = document.createElement("span"); sp.className = rooms.length ? "rooms" : "stat"; sp.style.fontSize = "13px";
+  sp.textContent = rooms.length ? "あなた向けの部屋：" + rooms.join("・") : "ジャンル別の部屋で、みんなで語れます。";
+  t.append(sp);
   const go = document.createElement("span"); go.className = "go"; go.textContent = "参加する ›";
   a.append(s, t, go);
-  return a;
+  wrap.append(a);
+  if (withHint) {
+    const h = document.createElement("p"); h.className = "community-hint";
+    h.textContent = "Discordのアカウント（無料）で参加できます。見るだけでもOKです。";
+    wrap.append(h);
+  }
+  return wrap;
 }
 function renderCommunity() {
-  for (const [id, lead] of [["meCommunity", "会員みんなの集まり"], ["matchCommunity", "マッチした人とも、みんなとも"], ["mCommunity", "みんなで語るなら"]]) {
-    const n = communityNode(lead); $(id).replaceChildren(...(n ? [n] : []));
+  for (const [id, lead, hint] of [
+    ["meCommunity", "会員みんなの集まり", true],
+    ["matchCommunity", "マッチした人とも、みんなとも", false],
+    ["mCommunity", "みんなで語るなら", false],
+    ["emptyCommunity", "待っているあいだは、語り場へ", true],
+    ["wCommunity", "次のステップ", true]
+  ]) {
+    const n = communityNode(lead, hint); $(id).replaceChildren(...(n ? [n] : []));
   }
+}
+function showWelcome() {
+  if (!COMMUNITY_URL) return;
+  $("wSeal").textContent = TYPES[me.type].seal;
+  $("wText").textContent = me.founder
+    ? `${me.nickname}さん、ようこそ。創設メンバーの称号が付きました🏅`
+    : `${me.nickname}さん、ようこそ。`;
+  $("welcomeOverlay").hidden = false;
+  $("wLater").focus();
 }
 
 /* ---------- 相性計算 ---------- */
@@ -785,9 +844,11 @@ $("saveBtn").addEventListener("click", async () => {
       delete profile.founder;
       await B.saveMe(profile, contacts);
     }
+    const firstTime = !me;
     me = profile; myContacts = contacts;
     show("app");
     renderMe(); buildQueue(); renderCommunity(); showTab("discover");
+    if (firstTime) showWelcome();
   } catch (e) {
     console.error(e);
     showErr("formErr", "保存できませんでした。通信状態を確認して、もう一度押してください。");
@@ -936,7 +997,9 @@ async function showMatch(p) {
 }
 $("mClose").addEventListener("click", () => { $("matchOverlay").hidden = true; });
 $("mToMatches").addEventListener("click", () => { $("matchOverlay").hidden = true; showTab("matches"); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") { $("matchOverlay").hidden = true; $("reportOverlay").hidden = true; } });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { $("matchOverlay").hidden = true; $("reportOverlay").hidden = true; $("welcomeOverlay").hidden = true; } });
+$("wLater").addEventListener("click", () => { $("welcomeOverlay").hidden = true; });
+$("welcomeOverlay").addEventListener("click", e => { if (e.target.closest("a.community")) $("welcomeOverlay").hidden = true; });
 
 async function renderMatches() {
   const list = matchedPeople();
