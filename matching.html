@@ -156,6 +156,20 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .community .rooms { font-size: 13px; color: var(--moon); }
 .community-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .community-hint { margin: 0; font-size: 12px; color: var(--mute); text-align: left; }
+.quiz-card { text-align: left !important; align-items: stretch !important; }
+.q-progress { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.q-bar { flex: 1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.q-bar i { display: block; height: 100%; width: 0; background: var(--lantern); transition: width .3s ease; }
+.q-text { font-family: var(--font-display); font-size: 21px; line-height: 1.5; margin: 0; text-wrap: balance; }
+.q-opts { display: flex; flex-direction: column; gap: 10px; }
+.q-opt { text-align: left; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; display: flex; gap: 12px; align-items: baseline; line-height: 1.5; }
+.q-opt:hover { border-color: var(--lantern); }
+.q-opt b { color: var(--lantern); font-family: var(--font-display); font-weight: 400; flex: none; }
+.q-result { display: flex; gap: 14px; align-items: center; }
+.q-result .seal { width: 64px; height: 64px; font-size: 30px; }
+.q-result p { margin: 0; }
+.quiz-link { background: none; border: 0; padding: 0; color: var(--moon); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .q-bar i { transition: none; } }
 .welcome-steps { margin: 0; padding: 0 0 0 1.3em; text-align: left; display: flex; flex-direction: column; gap: 6px; font-size: 14px; width: 100%; }
 .welcome-steps b { color: var(--lantern); font-weight: 500; }
 .overlay .card { max-height: calc(100vh - 32px); overflow-y: auto; }
@@ -214,6 +228,8 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
   <section class="card" id="login" hidden>
     <p class="lead">都市伝説の話ができる友だちを見つける、趣味友マッチングです。はじめての人も、ログインするとそのまま登録に進みます。</p>
     <p class="founder-note" id="founderNote" hidden></p>
+    <button class="btn-ghost" id="quizFromLogin" style="align-self:flex-start">ログインの前に、何派か診断してみる（約1分）</button>
+    <p class="stat" id="quizPicked" hidden></p>
     <button class="btn" id="googleBtn">Googleでログイン</button>
     <div class="divider">またはメールで</div>
     <label class="field" for="lEmail">メールアドレス
@@ -239,7 +255,7 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
       <input type="text" id="fNick" maxlength="20" placeholder="例：深夜のUMA観測員" autocomplete="off">
     </label>
     <div class="field">
-      <span>あなたのタイプ <a href="index.html" style="color:var(--moon);font-size:13px">わからない人は診断へ</a></span>
+      <span>あなたのタイプ <button type="button" class="quiz-link" id="quizFromSetup">わからない人は、ここで診断（約1分）</button></span>
       <div class="type-pick" id="fType"></div>
     </div>
     <div class="field">
@@ -372,6 +388,23 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
   </div>
 </main>
 
+<div class="overlay" id="quizOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="qText">
+  <div class="card quiz-card">
+    <div id="quizAsk" style="display:flex;flex-direction:column;gap:16px">
+      <div class="q-progress"><span id="qNum">Q1 / 9</span><div class="q-bar"><i id="qBar"></i></div></div>
+      <p class="q-text" id="qText"></p>
+      <div class="q-opts" id="qOpts"></div>
+      <div class="row"><button class="btn-ghost" id="qBack">ひとつ戻る</button><button class="linkish" id="qClose">やめる</button></div>
+    </div>
+    <div id="quizResult" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="q-result"><div class="seal" id="qrSeal"></div><div><div class="compat-label">あなたのタイプ</div><p class="person-name" id="qrName"></p></div></div>
+      <p style="margin:0" id="qrCopy"></p>
+      <p class="stat" id="qrMatch" style="margin:0"></p>
+      <div class="row"><button class="btn" id="qrUse">このタイプにする</button><button class="btn-ghost" id="qrRetry">もう一度</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="welcomeOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="wTitle">
   <div class="card">
     <div class="seal" id="wSeal"></div>
@@ -426,12 +459,12 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
 <script>
 /* ---------- 共通データ（診断ページと同じ6タイプ） ---------- */
 const TYPES = {
-  A: { seal: "古", name: "古代文明派" },
-  U: { seal: "宇", name: "宇宙人派" },
-  S: { seal: "結", name: "秘密結社派" },
-  P: { seal: "波", name: "波動派" },
-  G: { seal: "怪", name: "怪異派" },
-  K: { seal: "検", name: "検証派" }
+  A: { seal: "古", name: "古代文明派", copy: "ピラミッドや海底遺跡に胸が高鳴るロマン型。「昔の人はもっと知っていた」と感じていて、地層の奥に答えが眠っていると信じています。" },
+  U: { seal: "宇", name: "宇宙人派", copy: "夜空を見上げずにはいられない観測型。UFO映像は一時停止して検証し、人類だけが知的生命体だとは思っていません。" },
+  S: { seal: "結", name: "秘密結社派", copy: "ニュースの裏側を読むタイプ。シンボルや数字の一致に気づく観察眼があり、「誰が得をするのか」を常に考えています。" },
+  P: { seal: "波", name: "波動派", copy: "目に見えない周波数やエネルギーを感じ取る感覚型。山や神社で心が整う瞬間を知っていて、真実は自分の内側にあると考えています。" },
+  G: { seal: "怪", name: "怪異派", copy: "口裂け女やきさらぎ駅にゾクッとする語り部型。怖いのに知りたい、その好奇心で夜ふかしするのが大好きです。" },
+  K: { seal: "検", name: "検証派", copy: "「ソースは？」が口ぐせの調査型。信じるより調べるのが楽しく、都市伝説を一番ディープに味わっているのは実はこのタイプです。" }
 };
 const ORDER = ["A","U","S","P","G","K"];
 const GOOD = { A: "U", U: "A", S: "K", P: "G", G: "P", K: "S" };
@@ -576,6 +609,74 @@ function showWelcome() {
     : `${me.nickname}さん、ようこそ。`;
   $("welcomeOverlay").hidden = false;
   $("wLater").focus();
+}
+
+const QS = [
+  { q: "夜中についYouTubeで見てしまうのは？", o: [["A","ピラミッドの謎の建造方法"],["U","最新のUFO目撃映像"],["S","秘密結社のシンボル解説"],["G","心霊スポット突撃動画"]] },
+  { q: "旅行先で一番行きたい場所は？", o: [["A","与那国島の海底遺跡"],["P","神社やパワースポット巡り"],["G","地図から消えた廃村"],["K","博物館で一次資料を見る"]] },
+  { q: "「月の裏側には何かある」と言われたら？", o: [["U","基地があっても驚かない"],["S","隠しているのは各国政府だ"],["K","まず観測データを見せてほしい"],["A","古代文明の遺物かもしれない"]] },
+  { q: "気になってしまう数字や記号は？", o: [["S","ピラミッドの上の「目」のマーク"],["P","528Hz という周波数"],["G","4 と 13"],["K","特にない。数字は数字"]] },
+  { q: "友だちが「昨日、空に光る物体を見た」と言ったら？", o: [["U","時刻と方角をすぐに聞く"],["K","それ、たぶん人工衛星の列だね"],["P","何かのサインかもと感じる"],["G","それ、人魂じゃない？"]] },
+  { q: "好きな伝説・言い伝えは？", o: [["A","ムー大陸・アトランティス"],["G","口裂け女・きさらぎ駅"],["S","秘密結社と日本の歴史"],["U","かぐや姫は宇宙人だった説"]] },
+  { q: "お金の流れについてどう思う？", o: [["S","一部の人がルールを作っている"],["P","波動が整えばお金は巡ってくる"],["K","仕組みを数字で理解したい"],["A","古代の貨幣や交易のほうが気になる"]] },
+  { q: "理想の休日の過ごし方は？", o: [["P","山や森で深呼吸する"],["G","怖い話を聞きながら夜ふかし"],["U","星空を一晩中ながめる"],["K","気になる説を調べて検証する"]] },
+  { q: "結局、世界の真実はどこにある？", o: [["A","地層と遺跡の中"],["U","宇宙のむこう側"],["S","報道されない場所"],["P","自分の内側"]] }
+];
+let qAnswers = [];
+function qRender() {
+  const i = qAnswers.length, q = QS[i];
+  $("qNum").textContent = `Q${i + 1} / ${QS.length}`;
+  $("qBar").style.width = `${(i / QS.length) * 100}%`;
+  $("qText").textContent = q.q;
+  $("qOpts").replaceChildren(...q.o.map(([k, t], j) => {
+    const b = document.createElement("button"); b.className = "q-opt"; b.dataset.k = k;
+    const n = document.createElement("b"); n.textContent = "壱弐参肆"[j];
+    const sp = document.createElement("span"); sp.textContent = t;
+    b.append(n, sp); return b;
+  }));
+  $("qBack").hidden = i === 0;
+}
+function qTop() {
+  const sc = Object.fromEntries(ORDER.map(k => [k, 0]));
+  qAnswers.forEach(k => sc[k]++);
+  const max = Math.max(...Object.values(sc));
+  const tied = ORDER.filter(k => sc[k] === max);
+  if (tied.length === 1) return tied[0];
+  for (let i = qAnswers.length - 1; i >= 0; i--) if (tied.includes(qAnswers[i])) return qAnswers[i];
+  return tied[0];
+}
+let qResultType = "";
+function qShowResult() {
+  const k = qTop(); qResultType = k;
+  $("qrSeal").textContent = TYPES[k].seal;
+  $("qrName").textContent = TYPES[k].name;
+  $("qrCopy").textContent = TYPES[k].copy;
+  $("qrMatch").textContent = `相性◎は${TYPES[GOOD[k]].name}。`;
+  $("qrUse").textContent = $("setup").hidden ? "このタイプでログインへ" : "このタイプにする";
+  $("quizAsk").hidden = true; $("quizResult").hidden = false;
+}
+function openQuiz() {
+  qAnswers = []; qRender();
+  $("quizAsk").hidden = false; $("quizResult").hidden = true;
+  $("quizOverlay").hidden = false;
+}
+function bindQuiz() {
+$("qOpts").addEventListener("click", e => {
+  const b = e.target.closest(".q-opt"); if (!b) return;
+  qAnswers.push(b.dataset.k);
+  qAnswers.length === QS.length ? qShowResult() : qRender();
+});
+$("qBack").addEventListener("click", () => { qAnswers.pop(); qRender(); });
+$("qClose").addEventListener("click", () => { $("quizOverlay").hidden = true; });
+$("qrRetry").addEventListener("click", openQuiz);
+$("qrUse").addEventListener("click", () => {
+  store.set("tm_quiz_type", qResultType);
+  $("quizOverlay").hidden = true;
+  if (!$("setup").hidden) { draft.type = qResultType; renderForm(); }
+  else { $("quizPicked").textContent = `診断結果：${TYPES[qResultType].name}。ログインすると、このタイプで登録を始めます。`; $("quizPicked").hidden = false; }
+});
+$("quizFromSetup").addEventListener("click", openQuiz);
+$("quizFromLogin").addEventListener("click", openQuiz);
 }
 
 /* ---------- 相性計算 ---------- */
@@ -800,7 +901,7 @@ $("fGenres").addEventListener("click", e => {
 });
 
 function openSetup(editing) {
-  draft = { type: me?.type || new URLSearchParams(location.search).get("type") || "", genres: me ? [...me.genres] : [] };
+  draft = { type: me?.type || new URLSearchParams(location.search).get("type") || store.get("tm_quiz_type", "") || "", genres: me ? [...me.genres] : [] };
   if (!TYPES[draft.type]) draft.type = "";
   $("fNick").value = me?.nickname || "";
   $("fBio").value = me?.bio || "";
@@ -997,7 +1098,7 @@ async function showMatch(p) {
 }
 $("mClose").addEventListener("click", () => { $("matchOverlay").hidden = true; });
 $("mToMatches").addEventListener("click", () => { $("matchOverlay").hidden = true; showTab("matches"); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") { $("matchOverlay").hidden = true; $("reportOverlay").hidden = true; $("welcomeOverlay").hidden = true; } });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { $("matchOverlay").hidden = true; $("reportOverlay").hidden = true; $("welcomeOverlay").hidden = true; $("quizOverlay").hidden = true; } });
 $("wLater").addEventListener("click", () => { $("welcomeOverlay").hidden = true; });
 $("welcomeOverlay").addEventListener("click", e => { if (e.target.closest("a.community")) $("welcomeOverlay").hidden = true; });
 
@@ -1095,6 +1196,7 @@ async function enter() {
   renderMe(); updateBadge(); buildQueue(); renderCommunity(); showTab("discover");
 }
 (async function start() {
+  bindQuiz();
   $("modeLabel").textContent = B.label;
   if (founderOpen()) {
     $("founderNote").textContent = "オープン記念：12月23日までに登録した人には「創設メンバー」の称号がずっと付きます。";
