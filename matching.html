@@ -170,6 +170,28 @@ span.chip.common { border-color: var(--lantern); color: var(--lantern); }
 .q-result p { margin: 0; }
 .quiz-link { background: none; border: 0; padding: 0; color: var(--moon); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .q-bar i { transition: none; } }
+.tabs { grid-template-columns: repeat(4, 1fr); }
+.tonight-banner { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--panel); border: 1px dashed var(--lantern); border-radius: 12px; padding: 10px 14px; color: var(--ink); }
+.tonight-banner:hover { background: var(--panel-2); }
+.tonight-banner small { color: var(--lantern); font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+.tonight-banner span.q { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tonight-banner span.go { color: var(--lantern); font-size: 13px; white-space: nowrap; }
+.tonight small { font-size: 12px; letter-spacing: .14em; color: var(--lantern); }
+.tonight-q { font-family: var(--font-display); font-size: 24px; line-height: 1.45; margin: 4px 0 0; text-wrap: balance; }
+.t-form { display: flex; flex-direction: column; gap: 8px; }
+.t-form .row { justify-content: space-between; }
+.t-count { font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.answers { display: flex; flex-direction: column; gap: 10px; }
+.answer { background: var(--panel-2); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.answer.mine { border: 1px solid var(--lantern); }
+.answer .seal { width: 40px; height: 40px; font-size: 18px; grid-row: span 2; }
+.answer .who { font-size: 14px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.answer .who span.type { font-weight: 400; font-size: 12px; color: var(--mute); }
+.answer .who .founder { margin-left: 0; }
+.answer p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.65; min-width: 0; }
+.answer .acts { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.answer .acts .btn-ghost { font-size: 13px; padding: 5px 13px; }
+.answer .acts .btn-ghost.liked { border-color: var(--lantern); color: var(--lantern); cursor: default; }
 .welcome-steps { margin: 0; padding: 0 0 0 1.3em; text-align: left; display: flex; flex-direction: column; gap: 6px; font-size: 14px; width: 100%; }
 .welcome-steps b { color: var(--lantern); font-weight: 500; }
 .overlay .card { max-height: calc(100vh - 32px); overflow-y: auto; }
@@ -291,11 +313,13 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
     <div style="display:flex;flex-direction:column;gap:18px">
       <nav class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="discover" aria-selected="true">さがす</button>
+        <button class="tab" role="tab" data-tab="topic" aria-selected="false">お題</button>
         <button class="tab" role="tab" data-tab="matches" aria-selected="false">マッチ<span class="badge" id="matchBadge" hidden></span></button>
         <button class="tab" role="tab" data-tab="me" aria-selected="false">じぶん</button>
       </nav>
 
       <section id="tab-discover" style="display:flex;flex-direction:column;gap:14px">
+        <button class="tonight-banner" id="tonightBanner"><small>今夜のお題</small><span class="q" id="tBannerQ"></span><span class="go">答える ›</span></button>
         <div class="filter" id="filter"></div>
         <article class="card" id="personCard" hidden>
           <div class="person-head">
@@ -328,6 +352,25 @@ select { font: inherit; color: var(--ink); background: var(--panel-2); border: 1
           <button class="btn-ghost" id="resetPass">スキップした人をもう一度見る</button>
           <div id="emptyCommunity" style="width:100%"></div>
         </div>
+      </section>
+
+      <section id="tab-topic" class="card" hidden>
+        <div class="tonight"><small id="tDate">今夜のお題</small><p class="tonight-q" id="tQ"></p></div>
+        <div class="t-form">
+          <label class="field" for="tText" id="tLabel">あなたの答え（140文字まで）</label>
+          <textarea id="tText" maxlength="140" placeholder="思ったことを気軽にどうぞ。答えはログインしている会員みんなに見えます。"></textarea>
+          <div class="row">
+            <span class="t-count" id="tCount">0 / 140</span>
+            <div class="row">
+              <button class="linkish danger" id="tDelete" hidden>答えを消す</button>
+              <button class="btn" id="tPost" style="padding:10px 20px;font-size:15px">答える</button>
+            </div>
+          </div>
+          <p class="err" id="tErr" hidden></p>
+        </div>
+        <h2 id="tListHead">みんなの答え</h2>
+        <div class="answers" id="tList"></div>
+        <p class="stat" style="margin:0;font-size:12px">お題は毎日0時（日本時間）に変わります。気になる答えの人には、そのままイイねできます。</p>
       </section>
 
       <section id="tab-matches" class="card" hidden>
@@ -737,7 +780,16 @@ const DemoBackend = {
   async saveBlocks(set) { store.set("tm_blocks", [...set]); },
   async report() {},
   async logout() {},
-  async deleteAccount() { ["tm_profile", "tm_contacts", "tm_likes", "tm_blocks", "tm_passed"].forEach(store.del); }
+  async getAnswers(day) {
+    const sampleTexts = { s1: "宇宙人が関わってる説を推したい。語りだすと長くなるやつです🛸", s2: "どうしても怖いほうに考えてしまう派。今夜は眠れなそう👻", s4: "まず資料を集めたい。誰か一緒に調べませんか🔍", s6: "未来から見たら、もう答えは出ている気がします。" };
+    const list = Object.entries(sampleTexts).map(([uid, text], i) => ({ uid, day, text, createdAt: Date.now() - (i + 1) * 3600000 }));
+    const mine = store.get("tm_answer", null);
+    if (mine && mine.day === day) list.push(mine);
+    return list;
+  },
+  async saveAnswer(day, text) { store.set("tm_answer", { uid: "me", day, text, createdAt: Date.now() }); },
+  async deleteAnswer() { store.del("tm_answer"); },
+  async deleteAccount() { ["tm_profile", "tm_contacts", "tm_likes", "tm_blocks", "tm_passed", "tm_answer"].forEach(store.del); }
 };
 
 /* ---------- Firebase バックエンド ---------- */
@@ -815,13 +867,22 @@ const FirebaseBackend = {
   report(target, reason) {
     return this.fs.collection("reports").add({ from: this.uid, target, reason, createdAt: Date.now() });
   },
+  async getAnswers(day) {
+    const snap = await this.fs.collection("answers").where("day", "==", day).limit(300).get();
+    return snap.docs.map(d => d.data());
+  },
+  saveAnswer(day, text) {
+    return this.fs.collection("answers").doc(`${day}_${this.uid}`).set({ day, uid: this.uid, text, createdAt: Date.now() });
+  },
+  deleteAnswer(day) { return this.fs.collection("answers").doc(`${day}_${this.uid}`).delete(); },
   async deleteAccount() {
     const uid = this.uid, fs = this.fs;
-    const [mine, toMe] = await Promise.all([
+    const [mine, toMe, ans] = await Promise.all([
       fs.collection("likes").where("from", "==", uid).get(),
-      fs.collection("likes").where("to", "==", uid).get()
+      fs.collection("likes").where("to", "==", uid).get(),
+      fs.collection("answers").where("uid", "==", uid).get()
     ]);
-    await Promise.all([...mine.docs, ...toMe.docs].map(d => d.ref.delete()));
+    await Promise.all([...mine.docs, ...toMe.docs, ...ans.docs].map(d => d.ref.delete()));
     await Promise.all(["profiles", "contacts", "blocks"].map(c => fs.collection(c).doc(uid).delete()));
     await this.auth.currentUser.delete();
   }
@@ -960,8 +1021,9 @@ $("cancelEdit").addEventListener("click", () => show("app"));
 /* ---------- タブ ---------- */
 function showTab(name) {
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
-  ["discover", "matches", "me"].forEach(n => $("tab-" + n).hidden = n !== name);
+  ["discover", "topic", "matches", "me"].forEach(n => $("tab-" + n).hidden = n !== name);
   if (name === "matches") renderMatches();
+  if (name === "topic") loadTopic();
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showTab(t.dataset.tab); });
 
@@ -1045,8 +1107,9 @@ $("blockBtn").addEventListener("click", async () => {
   if (!current) return;
   await blockUser(current.p.id); showNext();
 });
-function openReport(p) {
-  reportTarget = p;
+let reportContext = "";
+function openReport(p, context) {
+  reportTarget = p; reportContext = context || "";
   $("rName").textContent = p.nickname;
   $("reportOverlay").hidden = false; $("rReason").focus();
 }
@@ -1055,12 +1118,112 @@ $("rCancel").addEventListener("click", () => { $("reportOverlay").hidden = true;
 $("rSend").addEventListener("click", async () => {
   const p = reportTarget; if (!p) return;
   $("rSend").disabled = true;
-  try { if (!p.sample) await B.report(p.id, $("rReason").value); } catch (e) { console.error(e); }
+  try { if (!p.sample) await B.report(p.id, ((reportContext ? "[お題] " : "") + $("rReason").value).slice(0, 100)); } catch (e) { console.error(e); }
   await blockUser(p.id);
   $("rSend").disabled = false; $("reportOverlay").hidden = true;
   if (current && current.p.id === p.id) showNext();
   if (!$("tab-matches").hidden) renderMatches();
+  if (!$("tab-topic").hidden) renderAnswers();
 });
+
+/* ---------- 今夜のお題 ---------- */
+const ALL_TOPICS = [...Object.values(TOPICS).flat(), ...FALLBACK_TOPICS];
+function jstDay() { return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10); }
+function topicOf(day) { const n = Math.floor(Date.parse(day + "T00:00:00Z") / 86400000); return ALL_TOPICS[((n % ALL_TOPICS.length) + ALL_TOPICS.length) % ALL_TOPICS.length]; }
+let tDay = "", answers = [], tLoading = false;
+function renderTonightBanner() {
+  tDay = jstDay();
+  $("tBannerQ").textContent = topicOf(tDay);
+}
+async function loadTopic() {
+  tDay = jstDay();
+  const [, m, d] = tDay.split("-").map(Number);
+  $("tDate").textContent = `今夜のお題・${m}/${d}`;
+  $("tQ").textContent = topicOf(tDay);
+  renderTonightBanner();
+  if (tLoading) return;
+  tLoading = true; showErr("tErr", "");
+  try { answers = await B.getAnswers(tDay); }
+  catch (e) { console.error(e); answers = []; showErr("tErr", "答えを読み込めませんでした。時間をおいて開き直してください。"); }
+  finally { tLoading = false; }
+  const mine = answers.find(a => a.uid === myUid());
+  $("tText").value = mine ? mine.text : "";
+  $("tPost").textContent = mine ? "答えを直す" : "答える";
+  $("tDelete").hidden = !mine;
+  updateTCount();
+  renderAnswers();
+}
+function myUid() { return B.uid || "me"; }
+function updateTCount() { $("tCount").textContent = `${[...$("tText").value].length} / 140`; }
+function personOf(uid) {
+  if (uid === myUid()) return { id: uid, ...me, isMe: true };
+  return people.find(p => p.id === uid) || null;
+}
+function renderAnswers() {
+  const rows = answers
+    .filter(a => !blocked.has(a.uid))
+    .map(a => ({ a, p: personOf(a.uid) }))
+    .filter(x => x.p && TYPES[x.p.type])
+    .sort((x, y) => (y.p.isMe ? 1 : 0) - (x.p.isMe ? 1 : 0) || y.a.createdAt - x.a.createdAt);
+  $("tListHead").textContent = `みんなの答え（${rows.length}件）`;
+  if (!rows.length) {
+    const e = document.createElement("p"); e.className = "stat"; e.style.margin = "0";
+    e.textContent = "まだ答えはありません。最初のひとりになってみませんか？";
+    $("tList").replaceChildren(e); return;
+  }
+  $("tList").replaceChildren(...rows.map(({ a, p }) => {
+    const card = document.createElement("div"); card.className = "answer" + (p.isMe ? " mine" : "");
+    const seal = document.createElement("div"); seal.className = "seal"; seal.textContent = TYPES[p.type].seal;
+    const who = document.createElement("div"); who.className = "who";
+    who.append(p.isMe ? `${p.nickname}（あなた）` : p.nickname);
+    const t = document.createElement("span"); t.className = "type"; t.textContent = TYPES[p.type].name; who.append(t);
+    if (p.founder) who.append(founderBadge());
+    if (p.sample) { const st = document.createElement("span"); st.className = "sample-tag"; st.textContent = "サンプル"; who.append(st); }
+    const txt = document.createElement("p"); txt.textContent = a.text;
+    card.append(seal, who, txt);
+    if (!p.isMe) {
+      const acts = document.createElement("div"); acts.className = "acts";
+      const like = document.createElement("button"); like.className = "btn-ghost";
+      const setLiked = () => { like.textContent = likedMe.has(p.id) ? "マッチ済み" : "イイね済み"; like.classList.add("liked"); like.disabled = true; };
+      if (liked.has(p.id)) setLiked();
+      else {
+        like.textContent = `イイね（相性${compat(me, p).score}%）`;
+        like.addEventListener("click", async () => {
+          like.disabled = true;
+          try {
+            const matched = await B.like(p.id);
+            liked.add(p.id);
+            if (matched) { likedMe.add(p.id); await showMatch(p); }
+            updateBadge(); setLiked();
+          } catch (e) { console.error(e); like.disabled = false; like.textContent = "送れませんでした。もう一度"; }
+        });
+      }
+      const rep = document.createElement("button"); rep.className = "linkish"; rep.textContent = "通報";
+      rep.addEventListener("click", () => openReport(p, "answer"));
+      acts.append(like, rep);
+      card.append(acts);
+    }
+    return card;
+  }));
+}
+function bindTopic() {
+  $("tonightBanner").addEventListener("click", () => showTab("topic"));
+  $("tText").addEventListener("input", updateTCount);
+  $("tPost").addEventListener("click", async () => {
+    const text = clean($("tText").value.replace(/\n{3,}/g, "\n\n")).slice(0, 140);
+    if (!text) { showErr("tErr", "答えを入力してください。"); return; }
+    $("tPost").disabled = true; showErr("tErr", "");
+    try { await B.saveAnswer(tDay, text); await loadTopic(); }
+    catch (e) { console.error(e); showErr("tErr", "投稿できませんでした。通信状態を確認して、もう一度押してください。"); }
+    finally { $("tPost").disabled = false; }
+  });
+  $("tDelete").addEventListener("click", async () => {
+    $("tDelete").disabled = true;
+    try { await B.deleteAnswer(tDay); await loadTopic(); }
+    catch (e) { console.error(e); showErr("tErr", "消せませんでした。もう一度お試しください。"); }
+    finally { $("tDelete").disabled = false; }
+  });
+}
 
 /* ---------- マッチ ---------- */
 function matchedPeople() { return visible().filter(p => liked.has(p.id) && likedMe.has(p.id)); }
@@ -1196,7 +1359,7 @@ async function enter() {
   renderMe(); updateBadge(); buildQueue(); renderCommunity(); showTab("discover");
 }
 (async function start() {
-  bindQuiz();
+  bindQuiz(); bindTopic(); renderTonightBanner();
   $("modeLabel").textContent = B.label;
   if (founderOpen()) {
     $("founderNote").textContent = "オープン記念：12月23日までに登録した人には「創設メンバー」の称号がずっと付きます。";
