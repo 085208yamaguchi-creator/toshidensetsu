@@ -1,0 +1,17 @@
+{
+  "name": "都市伝説マッチング",
+  "short_name": "都市伝説",
+  "description": "好きな都市伝説ジャンルが近い人にイイね。お互いイイねでマッチ成立。",
+  "lang": "ja",
+  "start_url": "./matching.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#13152c",
+  "theme_color": "#13152c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

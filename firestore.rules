@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+
+    function validProfile(d) {
+      return d.keys().hasOnly(['nickname', 'type', 'genres', 'bio', 'agreedAt', 'updatedAt', 'founder'])
+        && d.nickname is string && d.nickname.size() >= 1 && d.nickname.size() <= 20
+        && d.type in ['A', 'U', 'S', 'P', 'G', 'K']
+        && d.genres is list && d.genres.size() >= 1 && d.genres.size() <= 14
+        && d.bio is string && d.bio.size() <= 140
+        && d.agreedAt is int
+        && d.updatedAt is int;
+    }
+
+    // 創設メンバー: 締め切り（日本時間 2026/12/23 23:59）までに保存した人だけが付けられる。
+    // 一度付いた称号はそのまま残せる。matching.html の FOUNDER_DEADLINE と同じ日時にすること。
+    function founderOk(d) {
+      return !('founder' in d)
+        || d.founder == false
+        || (d.founder == true && (
+             request.time < timestamp.date(2026, 12, 23) + duration.value(15, 'h')
+             || (resource != null && resource.data.get('founder', false) == true)));
+    }
+
+    function okHandle(d, key, max) {
+      return !(key in d) || (d[key] is string && d[key].size() >= 1 && d[key].size() <= max);
+    }
+    function validContacts(d) {
+      return d.keys().hasOnly(['threads', 'x', 'instagram', 'discord'])
+        && d.keys().size() >= 1
+        && okHandle(d, 'threads', 30) && okHandle(d, 'x', 15)
+        && okHandle(d, 'instagram', 30) && okHandle(d, 'discord', 32);
+    }
+
+    function isMutual(a, b) {
+      return exists(/databases/$(db)/documents/likes/$(a + '_' + b))
+          && exists(/databases/$(db)/documents/likes/$(b + '_' + a));
+    }
+
+    // プロフィール: ログイン中なら誰でも読める。書けるのは本人だけ。
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid) && validProfile(request.resource.data) && founderOk(request.resource.data);
+      allow delete: if isMe(uid);
+    }
+
+    // イイね: ドキュメントID は「送った人_受けた人」。読めるのは当事者だけ。
+    match /likes/{id} {
+      allow read: if signedIn() && (resource == null
+        || request.auth.uid == resource.data.from
+        || request.auth.uid == resource.data.to);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'createdAt'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.to;
+      // 退会時に、自分が送った／受けたイイねを消せる
+      allow delete: if signedIn()
+        && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+    }
+
+    // 連絡先(SNS): 本人と、マッチした相手だけが読める。
+    match /contacts/{uid} {
+      allow read: if isMe(uid) || (signedIn() && isMutual(uid, request.auth.uid));
+      allow create, update: if isMe(uid) && validContacts(request.resource.data);
+      allow delete: if isMe(uid);
+    }
+
+    // ブロックリスト: 本人だけ。
+    match /blocks/{uid} {
+      allow read, delete: if isMe(uid);
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['ids'])
+        && request.resource.data.ids is list
+        && request.resource.data.ids.size() <= 500;
+    }
+
+    // 今夜のお題の答え: ドキュメントID は「日付_本人」。ログイン中なら読める。書けるのはプロフィール登録済みの本人だけ。
+    match /answers/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && exists(/databases/$(db)/documents/profiles/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['day', 'uid', 'text', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.day is string
+        && request.resource.data.day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && id == request.resource.data.day + '_' + request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 140
+        && request.resource.data.createdAt is int;
+      allow delete: if signedIn() && request.auth.uid == resource.data.uid;
+    }
+
+    // 通報: 送るだけ。読むのは運営が Firebase コンソールから。
+    match /reports/{id} {
+      allow read, update, delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'target', 'reason', 'createdAt'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.target is string
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 100
+        && request.resource.data.createdAt is int;
+    }
+  }
+}

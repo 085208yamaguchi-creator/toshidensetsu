@@ -8,7 +8,22 @@
 <meta property="og:title" content="あなたは何派？都市伝説相性診断">
 <meta property="og:description" content="9つの質問で、あなたの「信じ方のクセ」を6タイプに分類。所要時間は約1分。">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<meta property="og:url" content="https://085208yamaguchi-creator.github.io/toshidensetsu/">
+<meta property="og:image" content="https://085208yamaguchi-creator.github.io/toshidensetsu/icons/og-shindan.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="都市伝説マッチング">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://085208yamaguchi-creator.github.io/toshidensetsu/icons/og-shindan.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#13152c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="都市伝説">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
@@ -158,6 +173,7 @@ h2 { font-size: 14px; letter-spacing: .14em; color: var(--mute); font-weight: 50
     <div class="share-box" id="shareText"></div>
     <div class="row">
       <button class="btn" id="copyBtn">シェア文をコピー</button>
+      <a class="btn-ghost" id="matchLink" href="matching.html" style="text-decoration:none">この結果で仲間をさがす</a>
       <button class="btn-ghost" id="retryBtn">もう一度診断する</button>
       <span class="toast" id="toast" hidden>コピーしました</span>
     </div>
@@ -245,6 +261,7 @@ function renderResult() {
     return `<div class="dist-row${k === top ? " top" : ""}"><span>${TYPES[k].name}</span><div class="bar"><i style="width:${pct}%"></i></div><span>${pct}%</span></div>`;
   }).join("");
   $("shareText").textContent = `都市伝説相性診断の結果は【${t.name}】でした。\n相性◎は${TYPES[m.good].name}。\nあなたは何派？\n${location.href.split("#")[0]}\n#都市伝説相性診断`;
+  $("matchLink").href = `matching.html?type=${top}`;
   $("toast").hidden = true;
   show("result");
 }
@@ -256,5 +273,6 @@ $("copyBtn").addEventListener("click", () => {
   try { navigator.clipboard.writeText(txt).then(() => { $("toast").textContent = "コピーしました"; done(); }, fallback); } catch (e) { fallback(); }
 });
 </script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </body>
 </html>
